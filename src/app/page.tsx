@@ -1,69 +1,152 @@
-import Image from "next/image";
+import { byStage, profile, roles, SOURCE_LABEL } from "@/lib/data";
+import { STAGES } from "@/lib/types";
+import type { Role } from "@/lib/types";
+
+function fitTone(fit: number) {
+  if (fit >= 75) return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400";
+  if (fit >= 55) return "bg-amber-500/15 text-amber-700 dark:text-amber-400";
+  return "bg-neutral-500/15 text-neutral-600 dark:text-neutral-400";
+}
+
+function Funnel() {
+  const counts = STAGES.map((s) => ({ ...s, n: byStage(s.id).length }));
+  const max = Math.max(...counts.map((c) => c.n), 1);
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      {counts.map((c) => (
+        <div
+          key={c.id}
+          className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
+        >
+          <div className="text-2xl font-semibold tabular-nums">{c.n}</div>
+          <div className="mt-0.5 text-xs text-neutral-500">{c.label}</div>
+          <div className="mt-3 h-1 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
+            <div
+              className="h-full rounded-full bg-neutral-900 dark:bg-white"
+              style={{ width: `${(c.n / max) * 100}%` }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RoleRow({ r }: { r: Role }) {
+  const stage = STAGES.find((s) => s.id === r.stage);
+  return (
+    <tr className="border-t border-neutral-100 align-top dark:border-neutral-800">
+      <td className="py-3 pr-4">
+        <div className="font-medium leading-snug">{r.title}</div>
+        <div className="text-xs text-neutral-500">{r.company}</div>
+      </td>
+      <td className="py-3 pr-4 text-sm text-neutral-600 dark:text-neutral-400">
+        {r.remote ? "Remote" : r.location}
+      </td>
+      <td className="py-3 pr-4">
+        <span className="rounded-md bg-neutral-100 px-1.5 py-0.5 font-mono text-[11px] text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+          {SOURCE_LABEL[r.source]}
+        </span>
+      </td>
+      <td className="py-3 pr-4">
+        <span className="text-xs text-neutral-600 dark:text-neutral-400">
+          {r.outcome ?? stage?.label ?? r.stage}
+        </span>
+      </td>
+      <td className="py-3 pr-4">
+        <span
+          className={`rounded-md px-1.5 py-0.5 font-mono text-[11px] font-semibold ${fitTone(r.fit)}`}
+        >
+          {r.fit}
+        </span>
+      </td>
+      <td className="py-3 text-xs leading-relaxed text-neutral-500">
+        {r.reasons.slice(0, 2).join(" · ")}
+      </td>
+    </tr>
+  );
+}
 
 export default function Home() {
+  const applied = roles.filter((r) =>
+    ["applied", "recruiter_reply", "interview", "offer"].includes(r.stage),
+  );
+  const replied = roles.filter((r) =>
+    ["recruiter_reply", "interview", "offer"].includes(r.stage),
+  );
+  const replyRate = applied.length
+    ? Math.round((replied.length / applied.length) * 100)
+    : 0;
+  const queue = roles.filter((r) => r.stage === "found" || r.stage === "account_ready");
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="mx-auto max-w-6xl px-5 py-10">
+      <section>
+        <h1 className="text-3xl font-semibold tracking-tight">
+          Applying to 50 roles a day is a data problem.
+        </h1>
+        <p className="mt-3 max-w-2xl text-neutral-600 dark:text-neutral-400">
+          Applyr ingests postings from six sources, scores every one against a
+          single profile, works the queue in score order, and moves a role along
+          its stages when a recruiter actually replies. The scores on this page
+          are computed at build time by{" "}
+          <code className="rounded bg-neutral-100 px-1 py-0.5 font-mono text-[13px] dark:bg-neutral-800">
+            scoreFit()
+          </code>
+          , not stored — changing a weight re-ranks the board.
+        </p>
+      </section>
+
+      <section className="mt-9">
+        <Funnel />
+      </section>
+
+      <section className="mt-5 grid gap-3 sm:grid-cols-3">
+        <div className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+          <div className="text-2xl font-semibold tabular-nums">{replyRate}%</div>
+          <div className="mt-0.5 text-xs text-neutral-500">
+            Reply rate ({replied.length} of {applied.length} applied)
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+          <div className="text-2xl font-semibold tabular-nums">{queue.length}</div>
+          <div className="mt-0.5 text-xs text-neutral-500">In queue, ranked by fit</div>
         </div>
-      </main>
+        <div className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+          <div className="text-2xl font-semibold tabular-nums">
+            ${profile.minHourly}
+            <span className="text-sm font-normal text-neutral-500">/hr floor</span>
+          </div>
+          <div className="mt-0.5 text-xs text-neutral-500">
+            {profile.homeMetro} · {profile.maxCommuteMinutes} min commute · remote ok
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+          The board
+        </h2>
+        <div className="mt-3 overflow-x-auto rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+          <table className="w-full min-w-[46rem] text-left text-sm">
+            <thead>
+              <tr className="text-xs uppercase tracking-wide text-neutral-400">
+                <th className="pb-2 pr-4 font-medium">Role</th>
+                <th className="pb-2 pr-4 font-medium">Where</th>
+                <th className="pb-2 pr-4 font-medium">Source</th>
+                <th className="pb-2 pr-4 font-medium">Stage</th>
+                <th className="pb-2 pr-4 font-medium">Fit</th>
+                <th className="pb-2 font-medium">Why</th>
+              </tr>
+            </thead>
+            <tbody>
+              {roles.map((r) => (
+                <RoleRow key={r.id} r={r} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   );
 }
