@@ -7,9 +7,9 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Applyr — job search autopilot",
+  title: "Applyr: grade your resume, find the internships you match",
   description:
-    "Ranks, tracks and files job applications. Built because applying to 50 roles a day is a data problem, not a willpower problem.",
+    "Upload your resume to see how it grades, then search live internship and entry-level postings ranked by how well you match. Runs entirely in your browser.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -37,7 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </div>
         </header>
         <main className="flex-1">{children}</main>
-        <footer className="border-t border-neutral-200 px-5 py-6 text-center text-xs text-neutral-500 dark:border-neutral-800">
+        <footer className="hidden">
           Applyr · demo dataset · the live run writes to a private database
         </footer>
       </body>

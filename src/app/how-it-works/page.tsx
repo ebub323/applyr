@@ -3,14 +3,10 @@ export const metadata = { title: "How Applyr works" };
 function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
     <li className="flex gap-4">
-      <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-neutral-900 font-mono text-xs text-white dark:bg-white dark:text-neutral-900">
-        {n}
-      </span>
+      <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-neutral-900 font-mono text-xs text-white dark:bg-white dark:text-neutral-900">{n}</span>
       <div>
         <h3 className="font-medium">{title}</h3>
-        <p className="mt-1 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-          {children}
-        </p>
+        <p className="mt-1 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">{children}</p>
       </div>
     </li>
   );
@@ -21,90 +17,49 @@ export default function HowItWorks() {
     <div className="mx-auto max-w-3xl px-5 py-10">
       <h1 className="text-3xl font-semibold tracking-tight">How it works</h1>
       <p className="mt-3 text-neutral-600 dark:text-neutral-400">
-        The hard part of applying at volume is not filling forms. It is knowing
-        which 50 of 4,000 postings are worth the hour, keeping one identity
-        consistent across six portals, and noticing a reply before it goes cold.
+        Applying at volume fails in two places: a resume that software cannot read or a recruiter will not finish, and a search that
+        wastes the day on roles you will never get. Applyr works on both, and it does all of it in your browser.
       </p>
 
       <ol className="mt-9 space-y-7">
-        <Step n={1} title="Ingest">
-          Postings come from Greenhouse, Lever and Ashby job boards, Handshake,
-          Workday tenants and Indeed. The first three publish structured JSON per
-          company, which is why they are cheap to poll and why a posting from
-          them arrives with its real requirements rather than a scraped blob.
-          Everything is normalised to one shape before it is stored.
+        <Step n={1} title="Read your resume">
+          Upload a PDF, DOCX or text file, or paste it. The text is extracted on your device with no upload. Contact details, sections,
+          bullets, graduation year, GPA and 60-odd technologies are pulled out by rules you can read, not a model that guesses.
         </Step>
-        <Step n={2} title="Score, and keep the reason">
-          Every posting is scored 0&ndash;100 against one profile: title match,
-          skill overlap, location against a hard commute filter, a pay floor,
-          staleness, and the friction of the portal itself. The scorer returns
-          its reasons with the number. A ranking you cannot explain is a ranking
-          you cannot fix, so the <em>why</em> is a first-class output, not a log
-          line.
+        <Step n={2} title="Grade it, check by check">
+          Fifteen checks across ATS readiness, impact, technical depth and completeness. Do bullets start with a verb? Do they
+          contain a number? Are there filler phrases? Do projects link to proof? Every point awarded or withheld is listed with the
+          fix, and you can edit the text and watch the grade move.
         </Step>
-        <Step n={3} title="Deduplicate">
-          The same job is posted to four boards under three titles. Matching on
-          company plus normalised title plus location collapses them, so the
-          queue holds roles rather than postings &mdash; and nobody gets two
-          applications from the same person.
+        <Step n={3} title="Tell it what you want">
+          Your skills and target roles are filled in from the resume. Then answer the questions that actually decide a match:
+          where you can work, whether you will relocate, citizenship, minimum pay. Seven sliders set how much each factor counts.
         </Step>
-        <Step n={4} title="Apply">
-          Accounts are created once per portal and reused, with credentials held
-          in a vault outside the repo. High-friction portals &mdash; Workday
-          wants a fresh account and your whole history per employer &mdash; are
-          scored down rather than skipped, because sometimes the role is worth
-          the twenty minutes.
+        <Step n={4} title="Search real postings, live">
+          Greenhouse, Lever and Ashby publish every company&rsquo;s open roles as public JSON that browsers are allowed to read, so there is
+          no server and no scraping. Applyr pulls the boards you choose, drops senior, advanced-degree and non-software roles, collapses
+          one job posted per city into one, and reads the full descriptions of the best candidates.
         </Step>
-        <Step n={5} title="Watch the inbox">
-          A reply is the only real signal in this system. Incoming mail is
-          classified as rejection, scheduling request, recruiter question or
-          noise, and matched back to the application by company and thread.
-          Scheduling requests are checked against a calendar before anything is
-          confirmed. Status moves because something happened, never on a guess.
+        <Step n={5} title="Rank by match, with the reason">
+          Each role gets 0 to 100. The score is the sum of named factors: title, skills, location, eligibility, pay, freshness and how
+          painful the application portal is. Open any role to see each factor, what it contributed, and which skills you have and lack.
         </Step>
-        <Step n={6} title="Measure the funnel">
-          Reply rate per source and per score band is the only way to find out
-          whether the scorer is any good. If roles scoring 80 do not reply more
-          often than roles scoring 60, the weights are wrong and the board says
-          so.
+        <Step n={6} title="Find the skill that unlocks the most roles">
+          For the roles you nearly match, Applyr counts the skills they keep asking for and re-scores everything as if you had each
+          one. &ldquo;Adding Kubernetes lifts 2 roles to a strong match&rdquo; is a computed answer, not a guess.
+        </Step>
+        <Step n={7} title="Track to the offer">
+          Drag roles across a board from Found to Offer, keep notes, set a daily application goal, and export to CSV. The reply rate
+          tells you whether your approach is working.
         </Step>
       </ol>
 
       <h2 className="mt-12 text-xl font-semibold tracking-tight">Design notes</h2>
       <div className="mt-4 space-y-4 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-        <p>
-          <strong className="text-neutral-900 dark:text-neutral-100">
-            Scores are computed, never stored.
-          </strong>{" "}
-          Persisting a score would mean every weight change needed a backfill,
-          and old rows would quietly disagree with new ones. Storing the inputs
-          and deriving the score keeps one source of truth.
-        </p>
-        <p>
-          <strong className="text-neutral-900 dark:text-neutral-100">
-            Stages move on evidence.
-          </strong>{" "}
-          There is no timer that promotes an application to &ldquo;probably
-          reviewed&rdquo;. A stage changes when an email arrives or a portal
-          status flips, which means the funnel numbers are worth trusting.
-        </p>
-        <p>
-          <strong className="text-neutral-900 dark:text-neutral-100">
-            This page ships demo data.
-          </strong>{" "}
-          A public portfolio build has no business exposing a real application
-          history &mdash; which companies rejected whom is nobody else&rsquo;s
-          business. The live run writes to a private Postgres; this build is
-          seeded with representative postings so the logic is still inspectable.
-        </p>
-        <p>
-          <strong className="text-neutral-900 dark:text-neutral-100">
-            Weights are blunt on purpose.
-          </strong>{" "}
-          A learned model over a few hundred applications would overfit and could
-          not be explained in an interview. Linear weights with stated reasons
-          beat an unexplainable improvement at this data volume.
-        </p>
+        <p><strong className="text-neutral-900 dark:text-neutral-100">Your resume never leaves the page.</strong> Parsing, grading and scoring all run client-side, and the only network calls are to companies&rsquo; public job boards, which carry nothing about you. State lives in localStorage and one click deletes it.</p>
+        <p><strong className="text-neutral-900 dark:text-neutral-100">Every number has a reason.</strong> The grade and the match score both return their parts. A ranking you cannot explain is a ranking you cannot fix, so the explanation is the output, not a log line.</p>
+        <p><strong className="text-neutral-900 dark:text-neutral-100">Blunt weights on purpose.</strong> A learned model over a few hundred applications would overfit and could not be explained. Linear weights you can drag beat an unexplainable improvement at this data volume.</p>
+        <p><strong className="text-neutral-900 dark:text-neutral-100">It is tested where it is easy to be wrong.</strong> The filters have regression tests for the bugs that bit me: &ldquo;intern&rdquo; matching <em>Internal</em>, and &ldquo;, CA&rdquo; matching Canada as well as California.</p>
       </div>
     </div>
   );

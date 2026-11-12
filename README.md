@@ -2,80 +2,43 @@
 
 **Live:** https://applyr.techboy.dev · **How it works:** https://applyr.techboy.dev/how-it-works/
 
-Ranks, tracks and files job applications. Built because applying to 50 roles a
-day is a data problem, not a willpower problem.
-
-## Why it exists
-
-I was about to start applying at volume, and the bottleneck was never filling
-forms. It was knowing which 50 of several thousand postings were worth the hour,
-keeping one identity consistent across six different portals, and noticing a
-reply before it went cold.
+Upload your resume, see how it grades, then search live internship and entry-level postings
+ranked by how well you match. Everything runs in the browser: your resume is never uploaded.
 
 ## What it does
 
-| Stage | What happens |
+| Step | What happens |
 | --- | --- |
-| Ingest | Pulls postings from the public Greenhouse, Lever and Ashby job-board APIs, plus Handshake, Workday tenants and Indeed, and normalises them to one shape |
-| Score | Rates every posting 0–100 against one profile, and returns the *reasons* with the number |
-| Deduplicate | Collapses the same role posted to four boards under three titles |
-| Apply | One reusable account per portal, credentials held outside the repo |
-| Watch | Classifies incoming mail as rejection / scheduling / question / noise and matches it back to the application |
-| Measure | Reply rate per source and per score band, which is the only way to tell whether the scorer works |
+| **Resume** | Reads a PDF, DOCX or pasted text on-device. Extracts contact details, sections, bullets, graduation year, GPA and technologies, then grades it with 15 transparent checks (ATS readiness, impact, technical depth, completeness). Edit the text and the grade updates live. |
+| **Profile** | Skills and target roles are filled from the resume. Answer where you can work, whether you will relocate, citizenship and pay. Seven weights re-rank everything as you drag them. |
+| **Discover** | Pulls live postings from Greenhouse, Lever and Ashby (31 boards by default, any company can be added). Filters out senior, advanced-degree and non-software roles, deduplicates one-job-per-city, and reads the full description of the best candidates. |
+| **Match** | Every role gets 0-100 as a sum of named factors, with the skills you have and lack. A what-if engine shows which missing skill lifts the most roles to a strong match. |
+| **Board** | Drag roles from Found to Offer, keep notes, track a daily goal, export CSV. |
 
 ## Design decisions worth defending
 
-- **Scores are computed, never stored.** Persisting them would mean every weight
-  change needed a backfill, and old rows would quietly disagree with new ones.
-  Store the inputs, derive the score, keep one source of truth.
-- **A score carries its reasons.** `scoreFit()` returns `{ fit, reasons }`. A
-  ranking you cannot explain is a ranking you cannot debug.
-- **Portal friction is part of the score.** Workday wants a fresh account and
-  your whole history per employer; Greenhouse does not. Cheap applications are
-  worth more per unit of effort, so friction is a weighted input rather than a
-  footnote.
-- **Stages move on evidence.** Nothing promotes an application on a timer. A
-  stage changes when an email arrives or a portal status flips, which is what
-  makes the funnel numbers worth trusting.
-- **Weights are blunt on purpose.** A learned model over a few hundred
-  applications would overfit and could not be explained. Linear weights with
-  stated reasons beat an unexplainable improvement at this data volume.
+- **Client-side only.** The job boards send `Access-Control-Allow-Origin: *`, so a browser can read them directly. No server, no key, no scraping, and no resume ever leaves the device.
+- **Every number carries its reasons.** `scoreFit()` returns each factor's signed contribution. `parseResume()` returns each check's points. A score you cannot explain is a score you cannot debug.
+- **Weights are multipliers on named factors.** Tunable in the UI, deliberately blunt: a learned model over a few hundred applications would overfit and could not be explained.
+- **A fixed skills vocabulary, not a model.** The extractor cannot hallucinate a skill the text never named.
+- **Eligibility outranks skills.** A citizenship requirement costs more than any skill gains, because it decides whether you can be hired at all.
 
-## The ingest, and two bugs worth knowing about
+## Two bugs worth knowing about
 
-`ingest.py` hits the public ATS endpoints:
+1. A bare `intern` substring also matches **Internal**, **International** and **Internals**. Match `\bintern\b`.
+2. A US-location test of `, [A-Z]{2}` also matches **", IE"** (Dublin), and `, CA` is both California *and* Canada ("Toronto, ON, CA"). Rule Canada out by name before trusting a state code.
 
-```
-Greenhouse  https://boards-api.greenhouse.io/v1/boards/<co>/jobs?content=false
-Lever       https://api.lever.co/v0/postings/<co>?mode=json
-Ashby       https://api.ashbyhq.com/posting-api/job-board/<co>
-```
+Both have regression tests in `src/lib/ats.test.ts`.
 
-Filtering intern and junior roles has two traps I walked into:
-
-1. A bare `intern` substring also matches **Int*ern*ationalisation**,
-   **Int*ern*al** and **Int*ern*als**, which floods the results with senior
-   roles. Match `\bintern\b`.
-2. A US-location test of `,\s*[A-Z]{2}\b` also matches **", IE"** (Dublin) and
-   **", ON"** (Toronto). Use a state allowlist.
-
-57 company slugs yielded 81 deduplicated intern/junior engineering roles.
-
-## Running it
+## Run it
 
 ```bash
 npm install
 npm run dev     # http://localhost:3000
+npm test        # 30 tests
 npm run build   # static export to out/
 ```
 
-## Note on the data
-
-This build ships a representative demo dataset. A public portfolio has no
-business exposing a real application history — which companies rejected whom is
-nobody else's business — so the live run writes to a private database and only
-the logic is inspectable here.
-
 ## Stack
 
-Next.js 16 (App Router, static export) · TypeScript · Tailwind v4 · Python for ingest
+Next.js 16 (App Router, static export) · TypeScript · Tailwind v4 · pdf.js and JSZip (loaded only when a file is uploaded) · Vitest · GitHub Actions
