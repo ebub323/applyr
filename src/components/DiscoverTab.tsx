@@ -12,6 +12,14 @@ import type { Profile, Role, Weights } from "@/lib/types";
 import MatchDetail from "./MatchDetail";
 import { btn, btnGhost, card, FitPill, input } from "./ui";
 
+const SOURCE_TONE: Record<string, string> = {
+  greenhouse: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200", lever: "bg-sky-100 text-sky-800 dark:bg-sky-500/20 dark:text-sky-200",
+  ashby: "bg-violet-100 text-violet-800 dark:bg-violet-500/20 dark:text-violet-200", workday: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-200",
+  remotive: "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-500/20 dark:text-fuchsia-200", jobicy: "bg-pink-100 text-pink-800 dark:bg-pink-500/20 dark:text-pink-200",
+  smartrecruiters: "bg-orange-100 text-orange-800 dark:bg-orange-500/20 dark:text-orange-200",
+};
+const edge = (fit: number) => (fit >= 75 ? "border-l-emerald-400" : fit >= 55 ? "border-l-amber-400" : "border-l-slate-300 dark:border-l-slate-600");
+
 type Scored = Role & FitResult;
 const keyOf = (b: Board) => `${b.source}:${b.slug}`;
 const STRONG = 70;
@@ -171,24 +179,30 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
       <section className={`${card} p-5`}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold">Search live</h2>
-            <p className="text-sm text-neutral-500">Reads real postings for the fields you chose straight from public sources. Nothing about you is sent.</p>
+            <h2 className="text-xl font-extrabold">🔎 Search live</h2>
+            <p className="text-sm text-violet-950/60 dark:text-violet-100/60">Reads real postings for the fields you chose straight from public sources. Nothing about you is sent.</p>
           </div>
           <button className={btn} onClick={() => void run()} disabled={busy || (!boards.some(isOn) && !community && !remote && !bigEmployers)}>
             {busy ? (status.phase === "search" ? `Searching ${status.done}/${status.total}...` : `Reading descriptions ${status.done}/${status.total}...`) : "Search now"}
           </button>
         </div>
-        <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl bg-neutral-100 p-3 text-sm dark:bg-neutral-800">
-          <input type="checkbox" checked={remote} onChange={(e) => setRemote(e.target.checked)} className="mt-0.5 size-4 accent-neutral-900 dark:accent-white" />
+        {busy && (
+          <div className="mt-4" aria-live="polite">
+            <div className="h-2 overflow-hidden rounded-full bg-violet-100 dark:bg-violet-500/20"><div className="shimmer-bar h-full rounded-full transition-all duration-500" style={{ width: `${Math.max(6, Math.round((status.done / Math.max(1, status.total)) * 100))}%` }} /></div>
+            <div className="mt-1 text-xs text-violet-950/60 dark:text-violet-100/60">{status.phase === "search" ? `Checking ${status.done} of ${status.total} sources` : `Reading ${status.done} of ${status.total} job descriptions`}, {results.length} roles so far</div>
+          </div>
+        )}
+        <label className="lift mt-4 flex cursor-pointer items-start gap-3 rounded-2xl bg-gradient-to-r from-violet-50 to-fuchsia-50 p-3 text-sm dark:from-violet-500/10 dark:to-fuchsia-500/10">
+          <input type="checkbox" checked={remote} onChange={(e) => setRemote(e.target.checked)} className="mt-0.5 size-4 accent-fuchsia-500" />
           <span><span className="font-medium">Include remote jobs in every field</span> <span className="text-neutral-500">(support, sales, finance, healthcare, teaching, design and more)</span>
             <span className="block text-xs text-neutral-500">Remote listings from <a className="underline" href={REMOTIVE_URL} target="_blank" rel="noreferrer">Remotive</a> and <a className="underline" href={JOBICY_URL} target="_blank" rel="noreferrer">Jobicy</a>, linked back to their pages.</span></span>
         </label>
-        <label className="mt-2 flex cursor-pointer items-start gap-3 rounded-xl bg-neutral-100 p-3 text-sm dark:bg-neutral-800">
-          <input type="checkbox" checked={bigEmployers} onChange={(e) => setEmployers(e.target.checked)} className="mt-0.5 size-4 accent-neutral-900 dark:accent-white" />
+        <label className="lift mt-2 flex cursor-pointer items-start gap-3 rounded-2xl bg-gradient-to-r from-sky-50 to-cyan-50 p-3 text-sm dark:from-sky-500/10 dark:to-cyan-500/10">
+          <input type="checkbox" checked={bigEmployers} onChange={(e) => setEmployers(e.target.checked)} className="mt-0.5 size-4 accent-fuchsia-500" />
           <span><span className="font-medium">Include large employers on SmartRecruiters</span> <span className="text-neutral-500">(Domino&rsquo;s, McDonald&rsquo;s, Aramark, Sodexo, Equinox, Primark, Bosch and more: store, kitchen, driver, facilities and office roles in thousands of locations)</span></span>
         </label>
-        <label className="mt-2 flex cursor-pointer items-start gap-3 rounded-xl bg-neutral-100 p-3 text-sm dark:bg-neutral-800">
-          <input type="checkbox" checked={community} onChange={(e) => setCommunity(e.target.checked)} className="mt-0.5 size-4 accent-neutral-900 dark:accent-white" />
+        <label className="lift mt-2 flex cursor-pointer items-start gap-3 rounded-2xl bg-gradient-to-r from-sky-50 to-cyan-50 p-3 text-sm dark:from-sky-500/10 dark:to-cyan-500/10">
+          <input type="checkbox" checked={community} onChange={(e) => setCommunity(e.target.checked)} className="mt-0.5 size-4 accent-fuchsia-500" />
           <span><span className="font-medium">Include the community internship list</span> <span className="text-neutral-500">(software and data internships only; about 1,700 roles, including Workday and iCIMS portals the company boards cannot reach)</span>
             <span className="block text-xs text-neutral-500">Maintained by <a className="underline" href={COMMUNITY_REPO} target="_blank" rel="noreferrer">SimplifyJobs and Pitt CSC</a>. Read live from their public repository, never copied.</span></span>
         </label>
@@ -203,7 +217,7 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
             const on = isOn(b);
             return (
               <button key={keyOf(b)} aria-pressed={on} onClick={() => setOverrides({ ...overrides, [keyOf(b)]: !on })}
-                className={`rounded-full border px-3 py-1 text-xs transition-colors ${on ? "border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900" : "border-neutral-300 hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"}`}>
+                className={`press rounded-full border px-3 py-1 text-xs font-medium transition-all ${on ? "border-transparent bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white shadow shadow-violet-500/30" : "border-violet-200 bg-white/70 hover:-translate-y-0.5 hover:bg-fuchsia-50 dark:border-violet-500/30 dark:bg-transparent"}`}>
                 {b.label}
               </button>
             );
@@ -223,7 +237,7 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
         <div className="grid gap-6 lg:grid-cols-4">
           <div className="space-y-6 lg:col-span-1">
             <section className={`${card} p-4`}>
-              <div className="text-3xl font-semibold">{strong}</div>
+              <div className="grad-text text-5xl font-extrabold tabular-nums">{strong}</div>
               <div className="text-sm text-neutral-500">strong matches (70%+) out of {fromSaved ? `your best ${scored.length} from the last search` : `${scored.length} roles`}</div>
               {bySource.length > 0 && <p className="mt-2 text-xs text-neutral-400">{bySource.map(([s, n]) => `${n} on ${SOURCE_NAME[s] ?? s}`).join(" · ")}</p>}
               {fromSaved && <p className="mt-2 text-xs text-neutral-500">Showing your last search{lastSearchAt ? ` (${lastSearchAt})` : ""}. Search again for fresh roles.</p>}
@@ -231,11 +245,11 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
             </section>
             <section className={`${card} space-y-3 p-4 text-sm`}>
               <input className={input} placeholder="Filter by title, company, place" value={query} onChange={(e) => setQuery(e.target.value)} />
-              <label className="flex items-center gap-2"><input type="checkbox" checked={usOnly} onChange={(e) => setUsOnly(e.target.checked)} className="accent-neutral-900" /> US locations only <span className="text-xs text-neutral-400">(next search)</span></label>
-              <label className="flex items-center gap-2"><input type="checkbox" checked={remoteOnly} onChange={(e) => setRemoteOnly(e.target.checked)} className="accent-neutral-900" /> Remote only</label>
-              {previous && <label className="flex items-center gap-2"><input type="checkbox" checked={newOnly} onChange={(e) => setNewOnly(e.target.checked)} className="accent-neutral-900" /> New since {previous} <span className="font-mono text-xs text-neutral-400">{newCount}</span></label>}
+              <label className="flex items-center gap-2"><input type="checkbox" checked={usOnly} onChange={(e) => setUsOnly(e.target.checked)} className="accent-fuchsia-500" /> US locations only <span className="text-xs text-neutral-400">(next search)</span></label>
+              <label className="flex items-center gap-2"><input type="checkbox" checked={remoteOnly} onChange={(e) => setRemoteOnly(e.target.checked)} className="accent-fuchsia-500" /> Remote only</label>
+              {previous && <label className="flex items-center gap-2"><input type="checkbox" checked={newOnly} onChange={(e) => setNewOnly(e.target.checked)} className="accent-fuchsia-500" /> New since {previous} <span className="font-mono text-xs text-neutral-400">{newCount}</span></label>}
               <div><div className="flex justify-between"><span>Minimum match</span><span className="font-mono text-xs">{minFit}%</span></div>
-                <input type="range" min={0} max={95} step={5} value={minFit} onChange={(e) => setMinFit(Number(e.target.value))} className="w-full accent-neutral-900 dark:accent-white" aria-label="Minimum match" /></div>
+                <input type="range" min={0} max={95} step={5} value={minFit} onChange={(e) => setMinFit(Number(e.target.value))} className="w-full accent-fuchsia-500" aria-label="Minimum match" /></div>
             </section>
             {gaps.length > 0 && (
               <section className={`${card} p-4`}>
@@ -254,22 +268,23 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
           </div>
 
           <div className="lg:col-span-3">
+            {busy && shown.length === 0 && <ul className="space-y-2.5">{[0, 1, 2, 3].map((k) => <li key={k} className="skeleton h-20 rounded-2xl" />)}</ul>}
             <ul className="space-y-2.5">
-              {shown.slice(0, 80).map((r) => {
+              {shown.slice(0, 80).map((r, i) => {
                 const m = matchDetail(r, profile);
                 const tracked = trackedIds.has(r.id);
                 const isOpen = open === r.id;
                 const isNew = isNewSince(r, previous);
                 return (
-                  <li key={r.id} className={`${card} overflow-hidden`}>
+                  <li key={r.id} className={`${card} lift anim-up overflow-hidden border-l-4 ${edge(r.fit)}`} style={{ animationDelay: `${Math.min(i, 10) * 35}ms` }}>
                     <div className="flex flex-wrap items-start gap-3 p-3.5">
                       <button className="flex min-w-0 flex-1 basis-64 items-start gap-3 text-left" onClick={() => setOpen(isOpen ? null : r.id)} aria-expanded={isOpen}>
                         <div className="w-12 shrink-0 text-center"><FitPill fit={r.fit} /><div className="mt-0.5 text-[10px] text-neutral-400">match</div></div>
                         <div className="min-w-0">
-                          <div className="font-medium leading-snug">{r.title}{isNew && <span className="ml-2 rounded bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 dark:text-blue-300">NEW</span>}</div>
+                          <div className="font-medium leading-snug">{r.title}{isNew && <span className="anim-pop ml-2 rounded-full bg-gradient-to-r from-sky-500 to-cyan-400 px-2 py-0.5 text-[10px] font-bold text-white">NEW</span>}</div>
                           <div className="text-sm text-neutral-500">{r.company} · {r.remote ? "Remote" : r.location || "Location not listed"}</div>
                           <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-neutral-400">
-                            <span>{SOURCE_NAME[r.source] ?? r.source}</span>
+                            <span className={`rounded-full px-2 py-0.5 font-medium ${SOURCE_TONE[r.source] ?? "bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-200"}`}>{SOURCE_NAME[r.source] ?? r.source}</span>
                             {m.coverage !== null && <span>{m.have.length}/{r.keywords.length} skills</span>}
                             {r.flags?.includes("citizenship") && <span className="text-amber-700 dark:text-amber-400">US citizenship</span>}
                             {r.reasons[0] && <span className="truncate">{r.reasons[0]}</span>}
@@ -292,7 +307,7 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
         </div>
       )}
 
-      {status.phase === "idle" && <p className="py-8 text-center text-sm text-neutral-500">Pick sources and press Search now. Roles come back ranked by how well you match.</p>}
+      {status.phase === "idle" && <div className="anim-up py-10 text-center"><div aria-hidden className="anim-float text-5xl">🔎</div><p className="mt-3 text-sm text-violet-950/60 dark:text-violet-100/60">Press <b>Search now</b>. Roles come back ranked by how well you match.</p></div>}
     </div>
   );
 }

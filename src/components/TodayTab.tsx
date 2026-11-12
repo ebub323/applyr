@@ -17,24 +17,24 @@ export default function TodayTab({ queue, followUps, goal, appliedToday, streakD
   return (
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-3">
-        <div className={`${card} p-5`}>
-          <div className="text-3xl font-semibold tabular-nums">{appliedToday}<span className="text-lg font-normal text-neutral-400"> / {goal}</span></div>
-          <div className="text-sm text-neutral-500">{done ? "Goal reached. Nice work." : `${goal - appliedToday} to go today`}</div>
-          <div className="mt-3 h-2 rounded-full bg-neutral-100 dark:bg-neutral-800"><div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} /></div>
+        <div className="lift anim-up rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-500 p-5 text-white shadow-xl shadow-violet-500/30">
+          <div className="text-4xl font-extrabold tabular-nums">{appliedToday}<span className="text-xl font-medium opacity-70"> / {goal}</span></div>
+          <div className="text-sm font-medium opacity-90">{done ? "🎉 Goal reached. Nice work." : `${goal - appliedToday} to go today`}</div>
+          <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-white/25"><div className="h-full rounded-full bg-white transition-all duration-700" style={{ width: `${pct}%` }} /></div>
         </div>
-        <div className={`${card} p-5`}>
-          <div className="text-3xl font-semibold tabular-nums">{streakDays}<span className="text-lg font-normal text-neutral-400"> day{streakDays === 1 ? "" : "s"}</span></div>
-          <div className="text-sm text-neutral-500">{streakDays ? "Current streak" : "Apply to one role to start a streak"}</div>
+        <div className="lift anim-up rounded-2xl bg-gradient-to-br from-orange-500 to-amber-400 p-5 text-white shadow-xl shadow-orange-500/30 [animation-delay:70ms]">
+          <div className="text-4xl font-extrabold tabular-nums"><span className={streakDays ? "anim-wiggle inline-block" : ""}>🔥</span> {streakDays}<span className="text-xl font-medium opacity-70"> day{streakDays === 1 ? "" : "s"}</span></div>
+          <div className="text-sm font-medium opacity-90">{streakDays ? "Current streak" : "Apply to one role to start a streak"}</div>
         </div>
-        <div className={`${card} p-5`}>
-          <div className="text-3xl font-semibold tabular-nums">{appliedThisWeek}</div>
-          <div className="text-sm text-neutral-500">applications in the last 7 days</div>
+        <div className="lift anim-up rounded-2xl bg-gradient-to-br from-sky-500 to-teal-400 p-5 text-white shadow-xl shadow-sky-500/30 [animation-delay:140ms]">
+          <div className="text-4xl font-extrabold tabular-nums">{appliedThisWeek}</div>
+          <div className="text-sm font-medium opacity-90">applications in the last 7 days</div>
         </div>
       </div>
 
       {followUps.length > 0 && (
         <section className={`${card} p-5`}>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">Follow up <span className="font-mono">{followUps.length}</span></h2>
+          <h2 className="text-sm font-bold uppercase tracking-wide text-violet-500">Follow up <span className="font-mono">{followUps.length}</span></h2>
           <p className="mt-1 text-xs text-neutral-500">Applied a week or more ago with no reply. A short note is worth sending.</p>
           <ul className="mt-3 divide-y divide-neutral-100 dark:divide-neutral-800">
             {followUps.map((r) => (
@@ -50,17 +50,18 @@ export default function TodayTab({ queue, followUps, goal, appliedToday, streakD
 
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">Today&rsquo;s queue <span className="font-mono">{queue.length}</span></h2>
+          <h2 className="text-sm font-bold uppercase tracking-wide text-violet-500">Today&rsquo;s queue <span className="font-mono">{queue.length}</span></h2>
           <button className={btnGhost} onClick={onOpenDiscover}>Search for more</button>
         </div>
         {queue.length === 0 ? (
-          <div className={`${card} p-8 text-center text-sm text-neutral-500`}>
+          <div className={`${card} p-10 text-center text-sm text-violet-950/60 dark:text-violet-100/60`}>
+            <div aria-hidden className="anim-float mb-2 text-4xl">{done ? "🏆" : "📭"}</div>
             {done ? "You hit today's goal. Come back tomorrow, or raise the goal above." : "Nothing queued. Run a search so your best matches land here."}
           </div>
         ) : (
           <ul className="space-y-2.5">
             {queue.map(({ role: r, tracked }) => (
-              <li key={r.id} className={`${card} flex flex-wrap items-center gap-3 p-3.5`}>
+              <li key={r.id} className={`${card} lift anim-up flex flex-wrap items-center gap-3 p-3.5`}>
                 <div className="w-12 shrink-0 text-center"><FitPill fit={r.fit} /></div>
                 <div className="min-w-0 flex-1 basis-56">
                   <div className="truncate font-medium">{r.title}</div>

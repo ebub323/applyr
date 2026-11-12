@@ -24,7 +24,7 @@ export default function MatchDetail({ role, result, profile, resumeText }: { rol
 
   const TabBtn = ({ id, children }: { id: typeof tab; children: React.ReactNode }) => (
     <button onClick={() => setTab(id)} aria-pressed={tab === id}
-      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${tab === id ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900" : "text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"}`}>
+      className={`press rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${tab === id ? "bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white shadow-md shadow-violet-500/30" : "text-violet-700 hover:bg-violet-50 dark:text-violet-200 dark:hover:bg-violet-500/10"}`}>
       {children}
     </button>
   );

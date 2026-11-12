@@ -1,27 +1,35 @@
 "use client";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { fileToText } from "@/lib/extract";
 import { parseResume, replaceBullet, SAMPLE_RESUME, type Check } from "@/lib/resume";
 import type { Profile } from "@/lib/types";
-import { btn, btnGhost, card, input } from "./ui";
+import { btn, btnGhost, card, input, tagTone } from "./ui";
 
-const GROUPS: { id: Check["group"]; label: string; blurb: string }[] = [
-  { id: "ats", label: "ATS readiness", blurb: "Can software read it?" },
-  { id: "impact", label: "Impact", blurb: "Do bullets show results?" },
-  { id: "technical", label: "Technical depth", blurb: "Does it prove skill?" },
-  { id: "completeness", label: "Completeness", blurb: "Is anything missing?" },
+const GROUPS: { id: Check["group"]; label: string; blurb: string; bar: string }[] = [
+  { id: "ats", label: "ATS readiness", blurb: "Can software read it?", bar: "from-sky-500 to-cyan-400" },
+  { id: "impact", label: "Impact", blurb: "Do bullets show results?", bar: "from-fuchsia-500 to-pink-400" },
+  { id: "technical", label: "Skills and depth", blurb: "Does it prove skill?", bar: "from-violet-500 to-indigo-400" },
+  { id: "completeness", label: "Completeness", blurb: "Is anything missing?", bar: "from-amber-500 to-orange-400" },
 ];
 
 function Ring({ value }: { value: number }) {
   const r = 52, c = 2 * Math.PI * r;
-  const tone = value >= 80 ? "#10b981" : value >= 60 ? "#f59e0b" : "#ef4444";
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    let raf = 0; const t0 = performance.now(); const from = 0;
+    const tick = (t: number) => { const k = Math.min(1, (t - t0) / 900); setShown(Math.round(from + (value - from) * (1 - Math.pow(1 - k, 3)))); if (k < 1) raf = requestAnimationFrame(tick); };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value]);
+  const [c1, c2] = value >= 80 ? ["#10b981", "#2dd4bf"] : value >= 60 ? ["#f59e0b", "#fb923c"] : ["#ef4444", "#d946ef"];
   return (
-    <svg width="132" height="132" viewBox="0 0 132 132" role="img" aria-label={`Resume score ${value} out of 100`}>
-      <circle cx="66" cy="66" r={r} fill="none" strokeWidth="10" className="stroke-neutral-200 dark:stroke-neutral-800" />
-      <circle cx="66" cy="66" r={r} fill="none" strokeWidth="10" strokeLinecap="round" stroke={tone}
-        strokeDasharray={c} strokeDashoffset={c * (1 - value / 100)} transform="rotate(-90 66 66)" style={{ transition: "stroke-dashoffset .5s" }} />
-      <text x="66" y="68" textAnchor="middle" className="fill-current text-3xl font-semibold">{value}</text>
-      <text x="66" y="88" textAnchor="middle" className="fill-neutral-500 text-[11px]">out of 100</text>
+    <svg width="148" height="148" viewBox="0 0 132 132" role="img" aria-label={`Resume score ${value} out of 100`} className="drop-shadow-lg">
+      <defs><linearGradient id="ring" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor={c1} /><stop offset="1" stopColor={c2} /></linearGradient></defs>
+      <circle cx="66" cy="66" r={r} fill="none" strokeWidth="11" className="stroke-violet-100 dark:stroke-violet-500/20" />
+      <circle cx="66" cy="66" r={r} fill="none" strokeWidth="11" strokeLinecap="round" stroke="url(#ring)"
+        strokeDasharray={c} strokeDashoffset={c * (1 - shown / 100)} transform="rotate(-90 66 66)" />
+      <text x="66" y="70" textAnchor="middle" className="fill-current text-[34px] font-bold">{shown}</text>
+      <text x="66" y="88" textAnchor="middle" className="fill-violet-400 text-[10px] font-medium">out of 100</text>
     </svg>
   );
 }
@@ -53,20 +61,23 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
 
   if (a.empty) {
     return (
-      <div className="mx-auto max-w-2xl">
-        <h1 className="text-3xl font-semibold tracking-tight">Know where you stand before you apply.</h1>
-        <p className="mt-3 text-neutral-600 dark:text-neutral-400">
-          Upload your resume. Applyr grades it the way an applicant tracking system and a recruiter would, shows exactly what to fix,
-          then finds live jobs in any field, from healthcare and sales to software, ranked by how well you match. A small AI on your own computer can tailor your resume to each one.
+      <div className="relative mx-auto max-w-2xl text-center">
+        <span aria-hidden className="anim-float absolute -left-10 top-2 text-4xl">✨</span>
+        <span aria-hidden className="anim-float absolute -right-8 top-16 text-3xl [animation-delay:1.2s]">🚀</span>
+        <h1 className="anim-up text-4xl font-extrabold tracking-tight sm:text-5xl">Know where you stand <span className="grad-text">before you apply.</span></h1>
+        <p className="anim-up mt-4 text-lg text-violet-950/70 [animation-delay:80ms] dark:text-violet-100/70">
+          Drop in your resume. Applyr grades it the way an applicant tracking system and a recruiter would, works out what kind of job you are after,
+          then finds live openings in any field, ranked by how well you match. A small AI on your own computer tailors your resume to each one.
         </p>
         <div
           onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
           onDragLeave={() => setDrag(false)}
           onDrop={(e) => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) void load(f); }}
-          className={`${card} mt-8 border-2 border-dashed p-10 text-center transition-colors ${drag ? "border-neutral-900 dark:border-neutral-300" : ""}`}
+          className={`${card} anim-up mt-8 border-2 border-dashed p-10 text-center transition-all [animation-delay:160ms] ${drag ? "scale-[1.03] border-fuchsia-500 bg-fuchsia-50 shadow-2xl shadow-fuchsia-500/30" : "border-violet-300 hover:border-fuchsia-400 hover:shadow-xl"}`}
         >
-          <p className="text-lg font-medium">{busy ? "Reading your resume..." : "Drop your resume here"}</p>
-          <p className="mt-1 text-sm text-neutral-500">PDF, DOCX or TXT. It is read in your browser and never uploaded.</p>
+          <div aria-hidden className={`text-5xl ${drag ? "anim-wiggle" : "anim-float"}`}>{busy ? "⏳" : "📄"}</div>
+          <p className="mt-2 text-xl font-bold">{busy ? "Reading your resume..." : drag ? "Let go to upload!" : "Drop your resume here"}</p>
+          <p className="mt-1 text-sm text-violet-950/60 dark:text-violet-100/60">PDF, DOCX or TXT. It is read in your browser and never uploaded.</p>
           <div className="mt-5 flex justify-center gap-3">
             <button className={btn} disabled={busy} onClick={() => fileRef.current?.click()}>Choose a file</button>
             <button className={btnGhost} disabled={busy} onClick={() => onResume(SAMPLE_RESUME, "Sample resume")}>Try a sample</button>
@@ -88,11 +99,11 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
 
   return (
     <div className="space-y-6">
-      <div className={`${card} flex flex-wrap items-center gap-6 p-6`}>
+      <div className={`${card} anim-up flex flex-wrap items-center gap-6 p-6`}>
         <Ring value={a.overall} />
         <div className="min-w-64 flex-1">
           <div className="flex items-baseline gap-3">
-            <span className="text-4xl font-semibold">{a.grade}</span>
+            <span className="grad-text text-5xl font-extrabold">{a.grade}</span>
             <span className="text-lg text-neutral-600 dark:text-neutral-400">{a.level}</span>
           </div>
           <p className="mt-1 text-sm text-neutral-500">
@@ -105,7 +116,7 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
               return (
                 <div key={g.id}>
                   <div className="flex justify-between text-xs"><span className="font-medium">{g.label}</span><span className="font-mono text-neutral-500">{pct}</span></div>
-                  <div className="mt-1 h-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800"><div className="h-full rounded-full bg-neutral-900 transition-all dark:bg-white" style={{ width: `${pct}%` }} /></div>
+                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-violet-100 dark:bg-violet-500/20"><div className={`h-full rounded-full bg-gradient-to-r transition-all duration-700 ${g.bar}`} style={{ width: `${pct}%` }} /></div>
                   <div className="mt-0.5 text-[11px] text-neutral-400">{g.blurb}</div>
                 </div>
               );
@@ -128,25 +139,25 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
 
       <div className="grid gap-6 lg:grid-cols-5">
         <section className={`${card} p-5 lg:col-span-3`}>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">Fix these first</h2>
+          <h2 className="text-sm font-bold uppercase tracking-wide text-violet-500">Fix these first</h2>
           {a.fixes.length ? (
             <ol className="mt-3 space-y-2.5">
               {a.fixes.map((f, i) => (
-                <li key={f} className="flex gap-3 text-sm"><span className="grid size-5 shrink-0 place-items-center rounded-full bg-neutral-900 text-[11px] text-white dark:bg-white dark:text-neutral-900">{i + 1}</span>{f}</li>
+                <li key={f} className="flex gap-3 text-sm"><span className="grid size-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-500 text-[11px] font-bold text-white shadow">{i + 1}</span>{f}</li>
               ))}
             </ol>
           ) : <p className="mt-3 text-sm text-emerald-600">Nothing urgent. Your resume passes every check.</p>}
 
           <div className="mb-2 mt-7 flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">Your bullets, one by one</h2>
-            <label className="flex items-center gap-2 text-xs text-neutral-500"><input type="checkbox" checked={onlyWeak} onChange={(e) => setOnlyWeak(e.target.checked)} className="accent-neutral-900" /> Only ones that need work</label>
+            <h2 className="text-sm font-bold uppercase tracking-wide text-violet-500">Your bullets, one by one</h2>
+            <label className="flex items-center gap-2 text-xs text-neutral-500"><input type="checkbox" checked={onlyWeak} onChange={(e) => setOnlyWeak(e.target.checked)} className="accent-fuchsia-500" /> Only ones that need work</label>
           </div>
           {a.bulletReview.length === 0 ? <p className="text-sm text-neutral-400">No bullets detected.</p> : (
             <>
               <p className="mb-3 text-xs text-neutral-500">{a.bulletReview.filter((b) => b.hard).length} of {a.bulletReview.length} bullets need work{a.bulletReview.filter((b) => !b.hard && !b.ok).length > 0 ? `, and ${a.bulletReview.filter((b) => !b.hard && !b.ok).length} more would be stronger with a number` : ""}. Apply a fix and the grade updates.</p>
               <ul className="space-y-2.5">
                 {a.bulletReview.filter((b) => !onlyWeak || b.hard).map((b) => (
-                  <li key={b.text} className="rounded-xl border border-neutral-200 p-3 text-sm dark:border-neutral-800">
+                  <li key={b.text} className="lift rounded-xl border border-violet-100 bg-white/60 p-3 text-sm dark:border-violet-500/20 dark:bg-transparent">
                     <div className="flex items-start gap-2">
                       <span className={`mt-1 size-2 shrink-0 rounded-full ${b.ok ? "bg-emerald-500" : "bg-amber-500"}`} />
                       <p className="flex-1 leading-snug">{b.text}</p>
@@ -169,7 +180,7 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
             </>
           )}
 
-          <h2 className="mb-2 mt-7 text-sm font-semibold uppercase tracking-wide text-neutral-500">Every check</h2>
+          <h2 className="mb-2 mt-7 text-sm font-bold uppercase tracking-wide text-violet-500">Every check</h2>
           <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">
             {a.checks.map((c) => {
               const ok = c.earned >= c.max * 0.999;
@@ -187,9 +198,9 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
 
         <div className="space-y-6 lg:col-span-2">
           <section className={`${card} p-5`}>
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">Skills I found</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wide text-violet-500">Skills I found</h2>
             <div className="mt-3 flex flex-wrap gap-1.5">
-              {a.skills.map((s) => <span key={s} className="rounded-md bg-neutral-100 px-2 py-0.5 text-xs dark:bg-neutral-800">{s}</span>)}
+              {a.skills.map((s) => <span key={s} className={`anim-pop rounded-full px-2.5 py-0.5 text-xs font-medium ${tagTone(s)}`}>{s}</span>)}
             </div>
             <button className={`${btn} mt-4`} disabled={!missingSkills.length} onClick={() => onUseSkills(a.skills)}>
               {missingSkills.length ? `Use these ${a.skills.length} skills for matching` : "Already using these skills"}
@@ -197,12 +208,12 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
           </section>
 
           <section className={`${card} p-5`}>
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">Roles your resume points at</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wide text-violet-500">Roles your resume points at</h2>
             <ul className="mt-3 space-y-2.5">
               {a.targets.map((t) => (
                 <li key={t.id}>
                   <div className="flex justify-between text-sm"><span>{t.label}</span><span className="font-mono text-xs text-neutral-500">{Math.round(t.strength * 100)}%</span></div>
-                  <div className="mt-1 h-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800"><div className="h-full rounded-full bg-emerald-500" style={{ width: `${t.strength * 100}%` }} /></div>
+                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-violet-100 dark:bg-violet-500/20"><div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-400 transition-all duration-700" style={{ width: `${t.strength * 100}%` }} /></div>
                 </li>
               ))}
               {!a.targets.length && <li className="text-sm text-neutral-400">Add more skills and tools to see a clear direction.</li>}
@@ -211,7 +222,7 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
           </section>
 
           <section className={`${card} p-5 text-sm`}>
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">Contact check</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wide text-violet-500">Contact check</h2>
             <ul className="mt-3 space-y-1.5">
               {([["Email", a.email], ["Phone", a.phone], ["LinkedIn", a.linkedin], ["GitHub", a.github]] as const).map(([k, v]) => (
                 <li key={k} className="flex justify-between gap-3"><span className="text-neutral-500">{k}</span><span className={v ? "truncate" : "text-red-600"}>{v ?? "Missing"}</span></li>
