@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useRef, useState } from "react";
 import { fileToText } from "@/lib/extract";
-import { parseResume, SAMPLE_RESUME, type Check } from "@/lib/resume";
+import { parseResume, replaceBullet, SAMPLE_RESUME, type Check } from "@/lib/resume";
 import type { Profile } from "@/lib/types";
 import { btn, btnGhost, card, input } from "./ui";
 
@@ -37,6 +37,7 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
   const [err, setErr] = useState("");
   const [drag, setDrag] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [onlyWeak, setOnlyWeak] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
   const a = useMemo(() => parseResume(resume), [resume]);
 
@@ -135,6 +136,38 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
               ))}
             </ol>
           ) : <p className="mt-3 text-sm text-emerald-600">Nothing urgent. Your resume passes every check.</p>}
+
+          <div className="mb-2 mt-7 flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">Your bullets, one by one</h2>
+            <label className="flex items-center gap-2 text-xs text-neutral-500"><input type="checkbox" checked={onlyWeak} onChange={(e) => setOnlyWeak(e.target.checked)} className="accent-neutral-900" /> Only ones that need work</label>
+          </div>
+          {a.bulletReview.length === 0 ? <p className="text-sm text-neutral-400">No bullets detected.</p> : (
+            <>
+              <p className="mb-3 text-xs text-neutral-500">{a.bulletReview.filter((b) => b.hard).length} of {a.bulletReview.length} bullets need work{a.bulletReview.filter((b) => !b.hard && !b.ok).length > 0 ? `, and ${a.bulletReview.filter((b) => !b.hard && !b.ok).length} more would be stronger with a number` : ""}. Apply a fix and the grade updates.</p>
+              <ul className="space-y-2.5">
+                {a.bulletReview.filter((b) => !onlyWeak || b.hard).map((b) => (
+                  <li key={b.text} className="rounded-xl border border-neutral-200 p-3 text-sm dark:border-neutral-800">
+                    <div className="flex items-start gap-2">
+                      <span className={`mt-1 size-2 shrink-0 rounded-full ${b.ok ? "bg-emerald-500" : "bg-amber-500"}`} />
+                      <p className="flex-1 leading-snug">{b.text}</p>
+                    </div>
+                    {!b.ok && (
+                      <div className="mt-2 pl-4 text-xs text-neutral-500">
+                        <div className="flex flex-wrap gap-1.5">{b.issues.map((i) => <span key={i} className="rounded bg-amber-500/10 px-1.5 py-0.5 text-amber-800 dark:text-amber-300">{i}</span>)}</div>
+                        <ul className="mt-1.5 list-disc space-y-0.5 pl-4">{b.tips.map((t) => <li key={t}>{t}</li>)}</ul>
+                        {b.rewrite && (
+                          <div className="mt-2 rounded-lg bg-neutral-100 p-2 dark:bg-neutral-800">
+                            <div className="text-neutral-900 dark:text-neutral-100">{b.rewrite}</div>
+                            <button className={`${btnGhost} mt-1.5 !py-0.5 text-xs`} onClick={() => onResume(replaceBullet(resume, b.text, b.rewrite!), resumeName)}>Use this version</button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
 
           <h2 className="mb-2 mt-7 text-sm font-semibold uppercase tracking-wide text-neutral-500">Every check</h2>
           <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">

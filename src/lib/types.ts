@@ -30,6 +30,7 @@ export type Source =
   | "workday"
   | "handshake"
   | "indeed"
+  | "other"
   | "manual";
 
 export interface Role {
@@ -53,6 +54,10 @@ export interface Role {
   flags?: ("citizenship" | "clearance")[];
   ext?: { slug: string; id: string };
   descriptionLoaded?: boolean;
+  /** Which curated list or board category it came from, for display. */
+  category?: string;
+  /** The last day a follow-up was sent, so reminders do not nag. */
+  followedUpAt?: string;
 }
 
 /** The candidate profile every posting is scored against. */
@@ -69,7 +74,20 @@ export interface Profile {
   /** Able to meet a US citizenship requirement. */
   usCitizen: boolean;
   hasClearance: boolean;
+  /** Details copied into application forms and cover notes. Filled from the resume, editable. */
+  kit: Kit;
 }
+
+export interface Kit {
+  name: string; email: string; phone: string; location: string; linkedin: string; github: string; website: string;
+  school: string; degree: string; gradDate: string; gpa: string;
+  /** One project worth leading with: "Name: what it does". */
+  pitch: string;
+}
+
+export const EMPTY_KIT: Kit = {
+  name: "", email: "", phone: "", location: "", linkedin: "", github: "", website: "", school: "", degree: "", gradDate: "", gpa: "", pitch: "",
+};
 
 /** Multipliers on each scoring factor. 1 is the default, 0 switches a factor off. */
 export interface Weights {

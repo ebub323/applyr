@@ -48,9 +48,24 @@ export default function HowItWorks() {
           For the roles you nearly match, Applyr counts the skills they keep asking for and re-scores everything as if you had each
           one. &ldquo;Adding Kubernetes lifts 2 roles to a strong match&rdquo; is a computed answer, not a guess.
         </Step>
-        <Step n={7} title="Track to the offer">
-          Drag roles across a board from Found to Offer, keep notes, set a daily application goal, and export to CSV. The reply rate
-          tells you whether your approach is working.
+        <Step n={7} title="Search past the company boards">
+          Company boards miss most Workday and iCIMS portals. A community-maintained internship list (SimplifyJobs and Pitt CSC) covers
+          them, so Applyr reads it live from its public repository, merges it with the boards, and shows a role once even when both
+          list it. The data is never copied, and the source is credited in the app.
+        </Step>
+        <Step n={8} title="Work the day, not the pile">
+          Today&rsquo;s queue is your best unapplied matches, sized to what is left of your daily goal. Open a role and mark it applied in
+          one click, copy a cover note, skip what does not fit. A streak counts days in a row, and a role you applied to a week ago
+          with no reply comes back as a follow-up with a note ready to send.
+        </Step>
+        <Step n={9} title="Tailor and apply without retyping">
+          For any role, see which of its technologies are already on your resume, get your skills line reordered to lead with them,
+          and copy every form field from an apply kit filled in from your resume. The cover note is built only from your resume
+          and the posting, so it never claims a skill you do not have.
+        </Step>
+        <Step n={10} title="Track to the offer">
+          Drag roles across a board from Found to Offer, or use the move menu on a phone, keep notes, and export a CSV or a full
+          backup you can restore on any device. The reply rate tells you whether your approach is working.
         </Step>
       </ol>
 
@@ -59,7 +74,8 @@ export default function HowItWorks() {
         <p><strong className="text-neutral-900 dark:text-neutral-100">Your resume never leaves the page.</strong> Parsing, grading and scoring all run client-side, and the only network calls are to companies&rsquo; public job boards, which carry nothing about you. State lives in localStorage and one click deletes it.</p>
         <p><strong className="text-neutral-900 dark:text-neutral-100">Every number has a reason.</strong> The grade and the match score both return their parts. A ranking you cannot explain is a ranking you cannot fix, so the explanation is the output, not a log line.</p>
         <p><strong className="text-neutral-900 dark:text-neutral-100">Blunt weights on purpose.</strong> A learned model over a few hundred applications would overfit and could not be explained. Linear weights you can drag beat an unexplainable improvement at this data volume.</p>
-        <p><strong className="text-neutral-900 dark:text-neutral-100">It is tested where it is easy to be wrong.</strong> The filters have regression tests for the bugs that bit me: &ldquo;intern&rdquo; matching <em>Internal</em>, and &ldquo;, CA&rdquo; matching Canada as well as California.</p>
+        <p><strong className="text-neutral-900 dark:text-neutral-100">It is tested where it is easy to be wrong.</strong> There are regression tests for the bugs that bit me: &ldquo;intern&rdquo; matching <em>Internal</em>, &ldquo;, CA&rdquo; matching Canada as well as California, and a race where concurrent fetches overwrote each other and silently dropped roles.</p>
+        <p><strong className="text-neutral-900 dark:text-neutral-100">Demo data never counts as your activity.</strong> The sample roles on a fresh board carry made-up dates, so they are excluded from your streak, queue and reply rate. A streak you did not earn would be worse than none.</p>
       </div>
     </div>
   );

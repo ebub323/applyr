@@ -13,12 +13,32 @@ export interface AppState {
   dailyGoal: number;
   /** Becomes true once a resume has been analysed, so the app can start in the right place. */
   onboarded: boolean;
+  /** The best of the last search, so Today's queue works before anything is searched again. */
+  lastResults: Role[];
+  /** The day of the last search. Roles posted on or after it are "new". */
+  lastSearchAt: string;
+  /** Roles dismissed from the queue, by day. */
+  skipped: Record<string, string>;
 }
 
-const KEY = "applyr:v2";
+const KEY = "applyr:v3";
 const initial = (): AppState => ({
   profile: DEFAULT_PROFILE, weights: DEFAULT_WEIGHTS, roles: SEED_ROLES, resume: "", resumeName: "", dailyGoal: 10, onboarded: false,
+  lastResults: [], lastSearchAt: "", skipped: {},
 });
+
+/** Fills anything an older save lacks, so a new field never breaks someone's saved board. */
+export function normalise(saved: Partial<AppState>): AppState {
+  const base = initial();
+  return {
+    ...base, ...saved,
+    profile: { ...base.profile, ...saved.profile, kit: { ...base.profile.kit, ...saved.profile?.kit } },
+    weights: { ...base.weights, ...saved.weights },
+    roles: saved.roles ?? base.roles,
+    lastResults: saved.lastResults ?? [],
+    skipped: saved.skipped ?? {},
+  };
+}
 
 /**
  * Everything lives in the visitor's own browser. There is no server and no
@@ -31,17 +51,8 @@ export function useAppState() {
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) {
-        const saved = JSON.parse(raw) as Partial<AppState>;
-        const base = initial();
-        setState({
-          ...base, ...saved,
-          profile: { ...base.profile, ...saved.profile },
-          weights: { ...base.weights, ...saved.weights },
-          roles: saved.roles ?? base.roles,
-        });
-      }
+      const raw = localStorage.getItem(KEY) ?? localStorage.getItem("applyr:v2");
+      if (raw) setState(normalise(JSON.parse(raw) as Partial<AppState>));
     } catch {
       /* corrupt or unavailable storage: start from the defaults */
     }
@@ -54,6 +65,7 @@ export function useAppState() {
   }, [state, hydrated]);
 
   const update = useCallback((fn: (s: AppState) => AppState) => setState(fn), []);
-  const reset = useCallback(() => { try { localStorage.removeItem(KEY); } catch { /* ignore */ } setState(initial()); }, []);
-  return { state, update, reset, hydrated };
+  const replace = useCallback((s: Partial<AppState>) => setState(normalise(s)), []);
+  const reset = useCallback(() => { try { localStorage.removeItem(KEY); localStorage.removeItem("applyr:v2"); } catch { /* ignore */ } setState(initial()); }, []);
+  return { state, update, replace, reset, hydrated };
 }

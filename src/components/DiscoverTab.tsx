@@ -1,6 +1,8 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchBoard, fetchGreenhouseDetails, PRESET_BOARDS, type AtsSource, type Board } from "@/lib/ats";
+import { COMMUNITY_REPO, dedupeAcross, fetchCommunity } from "@/lib/community";
+import { isNewSince } from "@/lib/habit";
 import { matchDetail, scoreFit, type FitResult } from "@/lib/score";
 import type { Profile, Role, Weights } from "@/lib/types";
 import MatchDetail from "./MatchDetail";
@@ -10,6 +12,9 @@ type Scored = Role & FitResult;
 const keyOf = (b: Board) => `${b.source}:${b.slug}`;
 const STRONG = 70;
 const ENRICH_TOP = 30;
+const KEEP_FOR_QUEUE = 200;
+const SOURCE_NAME: Record<string, string> = { workday: "Workday", greenhouse: "Greenhouse", lever: "Lever", ashby: "Ashby", other: "Company site", indeed: "Indeed", handshake: "Handshake", manual: "Manual" };
+const today = () => new Date().toISOString().slice(0, 10);
 
 /** Runs `worker` over `items` with at most `n` in flight. */
 async function pool<T>(items: T[], n: number, worker: (item: T) => Promise<void>) {
@@ -19,44 +24,62 @@ async function pool<T>(items: T[], n: number, worker: (item: T) => Promise<void>
   }));
 }
 
-export default function DiscoverTab({ profile, weights, trackedIds, onTrack, runSignal }: {
+export default function DiscoverTab({ profile, weights, trackedIds, onTrack, runSignal, saved, lastSearchAt, onSearched, resumeText }: {
   profile: Profile; weights: Weights; trackedIds: Set<string>; onTrack: (r: Role) => void; runSignal: number;
+  saved: Role[]; lastSearchAt: string; onSearched: (top: Role[], day: string) => void; resumeText: string;
 }) {
   const [boards, setBoards] = useState<Board[]>(PRESET_BOARDS);
   const [picked, setPicked] = useState<Set<string>>(() => new Set(PRESET_BOARDS.map(keyOf)));
+  const [community, setCommunity] = useState(true);
   const [customSource, setCustomSource] = useState<AtsSource>("greenhouse");
   const [customSlug, setCustomSlug] = useState("");
   const [usOnly, setUsOnly] = useState(true);
   const [remoteOnly, setRemoteOnly] = useState(false);
+  const [newOnly, setNewOnly] = useState(false);
   const [minFit, setMinFit] = useState(0);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Role[]>([]);
   const [status, setStatus] = useState<{ phase: "idle" | "search" | "read" | "done"; done: number; total: number }>({ phase: "idle", done: 0, total: 0 });
   const [failed, setFailed] = useState<string[]>([]);
   const [open, setOpen] = useState<string | null>(null);
+  const [previous, setPrevious] = useState("");
+  const [fromSaved, setFromSaved] = useState(false);
   const abort = useRef<AbortController | null>(null);
+
+  // Come back to your last search instead of an empty page.
+  const restored = useRef(false);
+  useEffect(() => {
+    if (!restored.current && saved.length && results.length === 0 && status.phase === "idle") {
+      restored.current = true; setResults(saved); setPrevious(lastSearchAt); setFromSaved(true); setStatus({ phase: "done", done: 0, total: 0 });
+    }
+  }, [saved, lastSearchAt, results.length, status.phase]);
 
   const run = useCallback(async () => {
     abort.current?.abort();
     const ac = new AbortController(); abort.current = ac;
     const chosen = boards.filter((b) => picked.has(keyOf(b)));
-    if (!chosen.length) return;
-    setResults([]); setFailed([]); setOpen(null);
-    setStatus({ phase: "search", done: 0, total: chosen.length });
-    const found: Role[] = [];
+    if (!chosen.length && !community) return;
+    setResults([]); setFailed([]); setOpen(null); setFromSaved(false);
+    setPrevious(lastSearchAt);
+    setStatus({ phase: "search", done: 0, total: chosen.length + (community ? 1 : 0) });
+    let boardRoles: Role[] = []; let communityRoles: Role[] = [];
     const bad: string[] = [];
-    await pool(chosen, 5, async (b) => {
-      try { found.push(...(await fetchBoard(b, usOnly, ac.signal))); }
-      catch (e) { if (!ac.signal.aborted) bad.push(b.label); }
-      if (ac.signal.aborted) return;
-      setResults([...found]);
-      setStatus((s) => ({ ...s, done: s.done + 1 }));
-    });
+    const publish = () => setResults(dedupeAcross(boardRoles, communityRoles));
+    const tick = () => { if (!ac.signal.aborted) setStatus((s) => ({ ...s, done: s.done + 1 })); };
+
+    const tasks: Promise<void>[] = [];
+    if (community) tasks.push(fetchCommunity(usOnly, ac.signal).then((r) => { communityRoles = r; }).catch(() => { if (!ac.signal.aborted) bad.push("Community list"); }).finally(() => { if (!ac.signal.aborted) { publish(); tick(); } }));
+    tasks.push(pool(chosen, 5, async (b) => {
+      try { const got = await fetchBoard(b, usOnly, ac.signal); boardRoles = [...boardRoles, ...got]; }   // read boardRoles after the await: other boards finish meanwhile
+      catch { if (!ac.signal.aborted) bad.push(b.label); }
+      if (!ac.signal.aborted) { publish(); tick(); }
+    }));
+    await Promise.all(tasks);
     if (ac.signal.aborted) return;
     setFailed(bad);
 
     // Greenhouse lists carry no description. Read the best candidates so their skill match is real.
-    const top = found
+    const top = boardRoles
       .map((r) => ({ r, fit: scoreFit(r, profile, weights).fit }))
       .filter((x) => x.r.ext && !x.r.descriptionLoaded)
       .sort((a, b) => b.fit - a.fit).slice(0, ENRICH_TOP).map((x) => x.r);
@@ -65,39 +88,49 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
       try {
         const d = await fetchGreenhouseDetails(r.ext!.slug, r.ext!.id, r.company, ac.signal);
         if (ac.signal.aborted) return;
-        setResults((cur) => cur.map((x) => (x.id === r.id ? { ...x, ...d, descriptionLoaded: true } : x)));
+        boardRoles = boardRoles.map((x) => (x.id === r.id ? { ...x, ...d, descriptionLoaded: true } : x));
+        publish();
       } catch { /* a missing description just leaves the title-only score */ }
-      if (!ac.signal.aborted) setStatus((s) => ({ ...s, done: s.done + 1 }));
+      tick();
     });
-    if (!ac.signal.aborted) setStatus((s) => ({ ...s, phase: "done" }));
-  }, [boards, picked, usOnly, profile, weights]);
+    if (ac.signal.aborted) return;
+    setStatus((s) => ({ ...s, phase: "done" }));
+    const merged = dedupeAcross(boardRoles, communityRoles);
+    const best = merged.map((r) => ({ r, fit: scoreFit(r, profile, weights).fit })).sort((a, b) => b.fit - a.fit).slice(0, KEEP_FOR_QUEUE).map((x) => x.r);
+    onSearched(best, today());
+  }, [boards, picked, community, usOnly, profile, weights, lastSearchAt, onSearched]);
 
   // "Find my matches" elsewhere in the app bumps runSignal to start a search.
   const lastSignal = useRef(0);
-  useEffect(() => {
-    if (runSignal > lastSignal.current) { lastSignal.current = runSignal; void run(); }
-  }, [runSignal, run]);
+  useEffect(() => { if (runSignal > lastSignal.current) { lastSignal.current = runSignal; void run(); } }, [runSignal, run]);
   useEffect(() => () => abort.current?.abort(), []);
 
   const scored: Scored[] = useMemo(
     () => results.map((r) => ({ ...r, ...scoreFit(r, profile, weights) })).sort((a, b) => b.fit - a.fit),
     [results, profile, weights],
   );
+  const newCount = useMemo(() => scored.filter((r) => isNewSince(r, previous)).length, [scored, previous]);
   const shown = scored.filter((r) =>
-    r.fit >= minFit && (!remoteOnly || r.remote) &&
+    r.fit >= minFit && (!remoteOnly || r.remote) && (!newOnly || isNewSince(r, previous)) &&
     (!query || `${r.title} ${r.company} ${r.location}`.toLowerCase().includes(query.toLowerCase())));
   const strong = scored.filter((r) => r.fit >= STRONG).length;
+  const bySource = useMemo(() => {
+    const c = new Map<string, number>();
+    for (const r of scored) if (r.fit >= STRONG) c.set(r.source, (c.get(r.source) ?? 0) + 1);
+    return [...c.entries()].sort((a, b) => b[1] - a[1]);
+  }, [scored]);
 
   // What-if: which missing skill, if learned, would turn the most roles into strong matches?
   const gaps = useMemo(() => {
+    const withSkills = scored.filter((r) => r.descriptionLoaded);
     const counts = new Map<string, number>();
-    for (const r of scored) {
+    for (const r of withSkills) {
       if (r.fit < 45) continue;
       for (const k of matchDetail(r, profile).missing) counts.set(k, (counts.get(k) ?? 0) + 1);
     }
     return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6).map(([skill, roles]) => {
       const withSkill = { ...profile, skills: [...profile.skills, skill] };
-      const unlocked = scored.filter((r) => r.fit < STRONG && scoreFit(r, withSkill, weights).fit >= STRONG).length;
+      const unlocked = withSkills.filter((r) => r.fit < STRONG && scoreFit(r, withSkill, weights).fit >= STRONG).length;
       return { skill, roles, unlocked };
     }).filter((g) => g.roles > 0);
   }, [scored, profile, weights]);
@@ -118,13 +151,18 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
       <section className={`${card} p-5`}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold">Search live job boards</h2>
-            <p className="text-sm text-neutral-500">Reads real postings straight from each company's public board. Nothing about you is sent.</p>
+            <h2 className="text-lg font-semibold">Search live</h2>
+            <p className="text-sm text-neutral-500">Reads real postings straight from public sources. Nothing about you is sent.</p>
           </div>
-          <button className={btn} onClick={() => void run()} disabled={busy || picked.size === 0}>
+          <button className={btn} onClick={() => void run()} disabled={busy || (picked.size === 0 && !community)}>
             {busy ? (status.phase === "search" ? `Searching ${status.done}/${status.total}...` : `Reading descriptions ${status.done}/${status.total}...`) : "Search now"}
           </button>
         </div>
+        <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl bg-neutral-100 p-3 text-sm dark:bg-neutral-800">
+          <input type="checkbox" checked={community} onChange={(e) => setCommunity(e.target.checked)} className="mt-0.5 size-4 accent-neutral-900 dark:accent-white" />
+          <span><span className="font-medium">Include the community internship list</span> <span className="text-neutral-500">(about 1,700 software and data roles, including Workday and iCIMS portals the company boards cannot reach)</span>
+            <span className="block text-xs text-neutral-500">Maintained by <a className="underline" href={COMMUNITY_REPO} target="_blank" rel="noreferrer">SimplifyJobs and Pitt CSC</a>. Read live from their public repository, never copied.</span></span>
+        </label>
         <div className="mt-4 flex flex-wrap gap-2">
           {boards.map((b) => {
             const on = picked.has(keyOf(b));
@@ -150,13 +188,16 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
           <div className="space-y-6 lg:col-span-1">
             <section className={`${card} p-4`}>
               <div className="text-3xl font-semibold">{strong}</div>
-              <div className="text-sm text-neutral-500">strong matches (70%+) out of {scored.length} roles found</div>
-              {failed.length > 0 && <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">Could not reach: {failed.join(", ")}. Check the board name.</p>}
+              <div className="text-sm text-neutral-500">strong matches (70%+) out of {fromSaved ? `your best ${scored.length} from the last search` : `${scored.length} roles`}</div>
+              {bySource.length > 0 && <p className="mt-2 text-xs text-neutral-400">{bySource.map(([s, n]) => `${n} on ${SOURCE_NAME[s] ?? s}`).join(" · ")}</p>}
+              {fromSaved && <p className="mt-2 text-xs text-neutral-500">Showing your last search{lastSearchAt ? ` (${lastSearchAt})` : ""}. Search again for fresh roles.</p>}
+              {failed.length > 0 && <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">Could not reach: {failed.join(", ")}.</p>}
             </section>
             <section className={`${card} space-y-3 p-4 text-sm`}>
               <input className={input} placeholder="Filter by title, company, place" value={query} onChange={(e) => setQuery(e.target.value)} />
               <label className="flex items-center gap-2"><input type="checkbox" checked={usOnly} onChange={(e) => setUsOnly(e.target.checked)} className="accent-neutral-900" /> US locations only <span className="text-xs text-neutral-400">(next search)</span></label>
               <label className="flex items-center gap-2"><input type="checkbox" checked={remoteOnly} onChange={(e) => setRemoteOnly(e.target.checked)} className="accent-neutral-900" /> Remote only</label>
+              {previous && <label className="flex items-center gap-2"><input type="checkbox" checked={newOnly} onChange={(e) => setNewOnly(e.target.checked)} className="accent-neutral-900" /> New since {previous} <span className="font-mono text-xs text-neutral-400">{newCount}</span></label>}
               <div><div className="flex justify-between"><span>Minimum match</span><span className="font-mono text-xs">{minFit}%</span></div>
                 <input type="range" min={0} max={95} step={5} value={minFit} onChange={(e) => setMinFit(Number(e.target.value))} className="w-full accent-neutral-900 dark:accent-white" aria-label="Minimum match" /></div>
             </section>
@@ -182,15 +223,17 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
                 const m = matchDetail(r, profile);
                 const tracked = trackedIds.has(r.id);
                 const isOpen = open === r.id;
+                const isNew = isNewSince(r, previous);
                 return (
                   <li key={r.id} className={`${card} overflow-hidden`}>
-                    <div className="flex items-start gap-3 p-3.5">
-                      <button className="flex min-w-0 flex-1 items-start gap-3 text-left" onClick={() => setOpen(isOpen ? null : r.id)} aria-expanded={isOpen}>
+                    <div className="flex flex-wrap items-start gap-3 p-3.5">
+                      <button className="flex min-w-0 flex-1 basis-64 items-start gap-3 text-left" onClick={() => setOpen(isOpen ? null : r.id)} aria-expanded={isOpen}>
                         <div className="w-12 shrink-0 text-center"><FitPill fit={r.fit} /><div className="mt-0.5 text-[10px] text-neutral-400">match</div></div>
                         <div className="min-w-0">
-                          <div className="font-medium leading-snug">{r.title}</div>
+                          <div className="font-medium leading-snug">{r.title}{isNew && <span className="ml-2 rounded bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 dark:text-blue-300">NEW</span>}</div>
                           <div className="text-sm text-neutral-500">{r.company} · {r.remote ? "Remote" : r.location || "Location not listed"}</div>
                           <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-neutral-400">
+                            <span>{SOURCE_NAME[r.source] ?? r.source}</span>
                             {m.coverage !== null && <span>{m.have.length}/{r.keywords.length} skills</span>}
                             {r.flags?.includes("citizenship") && <span className="text-amber-700 dark:text-amber-400">US citizenship</span>}
                             {r.reasons[0] && <span className="truncate">{r.reasons[0]}</span>}
@@ -202,20 +245,18 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
                         <button className={btn} disabled={tracked} onClick={() => onTrack(r)}>{tracked ? "Tracked" : "Track"}</button>
                       </div>
                     </div>
-                    {isOpen && <div className="border-t border-neutral-100 p-4 dark:border-neutral-800"><MatchDetail role={r} result={r} profile={profile} /></div>}
+                    {isOpen && <div className="border-t border-neutral-100 p-4 dark:border-neutral-800"><MatchDetail role={r} result={r} profile={profile} resumeText={resumeText} /></div>}
                   </li>
                 );
               })}
             </ul>
-            {shown.length === 0 && !busy && <p className="py-10 text-center text-sm text-neutral-500">No roles match these filters. Lower the minimum match or pick more boards.</p>}
+            {shown.length === 0 && !busy && <p className="py-10 text-center text-sm text-neutral-500">No roles match these filters. Lower the minimum match or pick more sources.</p>}
             {shown.length > 80 && <p className="mt-3 text-center text-xs text-neutral-400">Showing the best 80 of {shown.length}.</p>}
           </div>
         </div>
       )}
 
-      {status.phase === "idle" && (
-        <p className="py-8 text-center text-sm text-neutral-500">Pick boards and press Search now. Roles come back ranked by how well you match.</p>
-      )}
+      {status.phase === "idle" && <p className="py-8 text-center text-sm text-neutral-500">Pick sources and press Search now. Roles come back ranked by how well you match.</p>}
     </div>
   );
 }

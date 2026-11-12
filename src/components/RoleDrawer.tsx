@@ -7,8 +7,8 @@ import type { Profile } from "@/lib/types";
 import MatchDetail from "./MatchDetail";
 import { btn, btnGhost, FitPill, input } from "./ui";
 
-export default function RoleDrawer({ role, profile, onChange, onMove, onDelete, onClose }: {
-  role: Scored; profile: Profile; onChange: (patch: Partial<Role>) => void; onMove: (stage: Stage) => void; onDelete: () => void; onClose: () => void;
+export default function RoleDrawer({ role, profile, resumeText, onChange, onMove, onDelete, onClose }: {
+  role: Scored; profile: Profile; resumeText: string; onChange: (patch: Partial<Role>) => void; onMove: (stage: Stage) => void; onDelete: () => void; onClose: () => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -46,7 +46,7 @@ export default function RoleDrawer({ role, profile, onChange, onMove, onDelete, 
           <input className={`${input} mt-3`} placeholder="Outcome (Rejected, Withdrew...)" value={role.outcome ?? ""} onChange={(e) => onChange({ outcome: e.target.value })} />
         )}
 
-        <div className="mt-6"><MatchDetail role={role} result={role} profile={profile} /></div>
+        <div className="mt-6"><MatchDetail role={role} result={role} profile={profile} resumeText={resumeText} /></div>
         {role.ext && !role.descriptionLoaded && (
           <div className="mt-2">
             <button className={btn} disabled={busy} onClick={loadDescription}>{busy ? "Reading..." : "Read the full description and re-score"}</button>

@@ -1,4 +1,4 @@
-import type { Profile, Role } from "./types";
+import { EMPTY_KIT, type Profile, type Role } from "./types";
 
 export const DEFAULT_PROFILE: Profile = {
   skills: ["TypeScript", "React", "Python", "Java", "C++", "C#", "SQL", "PostgreSQL", "Supabase", "AWS", "Git", "Docker", "Next.js", "HTML", "CSS"],
@@ -9,6 +9,7 @@ export const DEFAULT_PROFILE: Profile = {
   targets: ["swe", "backend", "web"],
   usCitizen: true,
   hasClearance: false,
+  kit: EMPTY_KIT,
 };
 
 /** Starter data so the board is not empty on first load. Clearable from the UI. */

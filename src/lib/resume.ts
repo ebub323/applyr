@@ -74,6 +74,7 @@ export interface ResumeAnalysis {
   level: string;
   fixes: string[];
   targets: Target[];
+  bulletReview: BulletReview[];
 }
 
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
@@ -88,6 +89,43 @@ function splitSections(lines: string[]): Record<string, string[]> {
     (out[cur] ??= []).push(raw);
   }
   return out;
+}
+
+function startsWithVerb(b: string): boolean {
+  const first = b.split(/\s+/)[0]?.toLowerCase().replace(/[^a-z]/g, "") ?? "";
+  return ACTION_VERBS.has(first) || /^[a-z]{3,}ed$/.test(first);
+}
+
+/** Neutral stronger openers. Deliberately not "Led" or "Owned": a rewrite must not claim more than was done. */
+const WEAK_LEADS: [RegExp, string][] = [
+  [/^responsible for\s+/i, "Handled "], [/^helped( with)?\s+/i, "Contributed to "], [/^assisted (with|in)\s+/i, "Supported "],
+  [/^worked on\s+/i, "Contributed to "], [/^duties included\s+/i, "Handled "],
+];
+
+/** `hard` issues (no verb, filler, length) make a bullet need work. A missing number alone is only a suggestion. */
+export interface BulletReview { text: string; issues: string[]; tips: string[]; rewrite?: string; ok: boolean; hard: boolean }
+
+/** What is weak about one bullet, and the smallest honest fix. */
+export function reviewBullet(text: string): BulletReview {
+  const issues: string[] = []; const tips: string[] = [];
+  let rewrite: string | undefined;
+  const lead = WEAK_LEADS.find(([re]) => re.test(text));
+  if (lead) {
+    issues.push("Opens with a filler phrase");
+    rewrite = text.replace(lead[0], lead[1]);
+    tips.push(`Try opening with "${lead[1].trim()}".`);
+  } else if (!startsWithVerb(text)) {
+    issues.push("Does not open with an action verb");
+    tips.push("Start with a past-tense verb: Built, Designed, Reduced, Shipped.");
+  }
+  const filler = WEAK.map((re) => text.match(re)?.[0]).find((x): x is string => !!x);
+  if (filler && !lead) { issues.push(`Filler: "${filler}"`); tips.push("Say what you actually did instead."); }
+  const words = text.trim().split(/\s+/).length;
+  if (words < 8) { issues.push("Too short to show impact"); tips.push("Add what it was for and what came of it."); }
+  if (words > 32) { issues.push("Long"); tips.push("Split it into two bullets."); }
+  const hard = issues.length > 0;
+  if (!/\d/.test(text)) { issues.push("No number"); tips.push("Add one: users, rows, endpoints, tests, minutes saved, percent."); }
+  return { text, issues, tips, rewrite, ok: issues.length === 0, hard };
 }
 
 const GLYPH = /^[•·▪◦●○*\-–—]\s+/;
@@ -105,14 +143,17 @@ function looksLikeBullet(line: string): boolean {
  * that wrapped onto the next line. Otherwise fall back to sentence-shaped lines
  * (DOCX text loses its glyphs).
  */
-function collectBullets(lines: string[]): string[] {
+function collectBullets(lines: string[], minGlyph = 3): string[] {
   const glyphLed = lines.filter((l) => GLYPH.test(l.trim())).length;
-  if (glyphLed >= 3) {
+  if (glyphLed >= minGlyph) {
     const out: string[] = [];
     for (const l of lines) {
       const t = l.trim();
       if (GLYPH.test(t)) out.push(t.replace(GLYPH, ""));
-      else if (out.length && /^[a-z(]/.test(t) && !LABEL.test(t)) out[out.length - 1] += " " + t;
+      else if (out.length && !LABEL.test(t) && !/20\d\d\s*$/.test(t) && (/^[a-z(]/.test(t) || !/[.!?]$/.test(out[out.length - 1]))) {
+        // A wrapped line: it can start with a capital ("SQL migrations..."), so the tell is that the bullet above never ended.
+        out[out.length - 1] += " " + t;
+      }
     }
     return out;
   }
@@ -134,11 +175,7 @@ export function parseResume(text: string, now: number = Date.now()): ResumeAnaly
 
   const bulletSource = ["experience", "projects", "leadership"].flatMap((k) => sectionsText[k] ?? []);
   const bullets = collectBullets(bulletSource);
-  const verbOk = (b: string) => {
-    const first = b.split(/\s+/)[0]?.toLowerCase().replace(/[^a-z]/g, "") ?? "";
-    return ACTION_VERBS.has(first) || /^[a-z]{3,}ed$/.test(first);
-  };
-  const actionVerbBullets = bullets.filter(verbOk).length;
+  const actionVerbBullets = bullets.filter(startsWithVerb).length;
   const quantifiedBullets = bullets.filter((b) => /\d/.test(b)).length;
   const weakPhrases = WEAK.map((re) => clean.match(re)?.[0]).filter((x): x is string => !!x);
 
@@ -224,6 +261,7 @@ export function parseResume(text: string, now: number = Date.now()): ResumeAnaly
   return {
     empty, wordCount: words.length, email, phone, linkedin, github, sections, bullets, actionVerbBullets, quantifiedBullets,
     weakPhrases, skills, gradYear, gpa, isStudent, oddCharacters, checks, groupScores, overall, grade, level, fixes, targets,
+    bulletReview: bullets.map(reviewBullet),
   };
 }
 
@@ -255,3 +293,50 @@ Tools: Git, Docker, Linux
 CERTIFICATIONS
 CompTIA A+
 `;
+
+const MONTH = "(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\.?";
+
+/** Pulls the details people retype into every application form out of the resume text. */
+export function extractKit(text: string): import("./types").Kit {
+  const lines = text.replace(/\r/g, "").split("\n").map((l) => l.trim()).filter(Boolean);
+  const a = parseResume(text);
+  const secs = splitSections(lines);
+  const head = (secs.header ?? []).slice(0, 5);
+  const name = head.find((l) => l.split(/\s+/).length <= 4 && !/[@\d|]/.test(l)) ?? "";
+  const titleCase = (s: string) => (s === s.toUpperCase() ? s.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()) : s);
+  // "City, ST" is one segment of a header line like "Baltimore, MD | (410) 555-0100 | a@b.com".
+  const location = head.flatMap((l) => l.split("|")).map((s) => s.trim()).find((s) => /^[A-Z][A-Za-z .]+,\s*[A-Z]{2}$/.test(s)) ?? "";
+  const edu = secs.education ?? [];
+  const cleanSchool = (s: string) => s.replace(new RegExp(`\\s+(?:Expected|Anticipated)?\\s*${MONTH}\\s+\\d{4}.*$`, "i"), "").replace(/\s+\d{4}$/, "").replace(/\s*[-\u2014\u2013]\s.*$/, "").trim();
+  const school = edu[0] ? cleanSchool(edu[0]) : "";
+  const degreeLine = edu.find((l) => /bachelor|b\.?s\.?\b|master|m\.?s\.?\b|associate/i.test(l));
+  const degree = degreeLine ? degreeLine.split("|")[0].trim() : "";
+  const gradDate = edu.join(" ").match(new RegExp(`(?:Expected|Anticipated)?\\s*(${MONTH}\\s+20\\d\\d)`, "i"))?.[1] ?? "";
+
+  // First project and its first bullet, as a one-line pitch.
+  const proj = secs.projects ?? [];
+  const isBullet = (l: string) => GLYPH.test(l);
+  // A project header ends in a date ("Applyr: Resume Grader   Nov 2026"). It can look like a "Label:" line, so the date is what counts.
+  const hi = proj.findIndex((l) => !isBullet(l) && /(20\d\d)\s*$/.test(l));
+  let pitch = "";
+  if (hi >= 0) {
+    const title = proj[hi].replace(new RegExp(`\\s+(?:${MONTH}\\s+)?20\\d\\d\\s*$`, "i"), "").trim();
+    const first = collectBullets(proj.slice(hi + 1), 1)[0];
+    const gist = first ? first.replace(/\.$/, "") : "";
+    const projectName = title.split(/\s*[:|]\s*/)[0].trim();
+    const clip = (s: string, n: number) => (s.length <= n ? s : `${s.slice(0, s.lastIndexOf(" ", n)).replace(/[,;:(\s-]+$/, "")}\u2026`);
+    pitch = gist ? `${projectName}: ${clip(gist, 140)}` : projectName;
+  }
+  return {
+    name: titleCase(name), email: a.email ?? "", phone: a.phone ?? "", location, linkedin: a.linkedin ?? "", github: a.github ?? "",
+    website: "", school, degree, gradDate, gpa: a.gpa !== undefined ? String(a.gpa) : "", pitch,
+  };
+}
+
+/** Swap one bullet for its rewrite, even when the extracted text wrapped it across lines. */
+export function replaceBullet(text: string, original: string, rewrite: string): string {
+  if (text.includes(original)) return text.replace(original, rewrite);
+  const esc = (w: string) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(original.trim().split(/\s+/).map(esc).join("\\s+"));
+  return re.test(text) ? text.replace(re, rewrite) : text;
+}

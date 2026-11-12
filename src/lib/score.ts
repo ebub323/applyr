@@ -25,6 +25,7 @@ export const SOURCE_FRICTION: Record<Source, number> = {
   handshake: 0.2,
   manual: 0.3,
   indeed: 0.35,
+  other: 0.5,
   workday: 0.8,
 };
 

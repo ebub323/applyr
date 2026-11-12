@@ -54,11 +54,15 @@ const US = new RegExp(`(remote|united states|\\busa?\\b|, ?(${US_STATES})\\b|cal
 // ", CA" is both California and Canada. Rule Canada out by name before trusting the state code.
 const CANADA = /\b(canada|toronto|vancouver|montreal|ottawa|calgary|waterloo|ontario|british columbia|quebec)\b|, ?(ON|BC|QC|AB)\b/i;
 
+/** True when a location is acceptable. Canada is ruled out by name before a state code is trusted. */
+export function locationOk(location: string, usOnly: boolean): boolean {
+  return !(usOnly && location && (CANADA.test(location) || !US.test(location)));
+}
+
 export function isRelevant(title: string, location: string, usOnly: boolean): boolean {
   if (!(WANT.test(title) && ENG.test(title))) return false;
   if (NOPE.test(title) || NON_SWE.test(title)) return false;
-  if (usOnly && location && (CANADA.test(location) || !US.test(location))) return false;
-  return true;
+  return locationOk(location, usOnly);
 }
 
 const isRemote = (loc: string) => /remote/i.test(loc);

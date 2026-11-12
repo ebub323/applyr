@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { BASE, DEFAULT_WEIGHTS, scoreFit } from "./score";
-import type { Profile, Role } from "./types";
+import { EMPTY_KIT, type Profile, type Role } from "./types";
 
 const NOW = new Date("2026-11-12T00:00:00Z").getTime();
 
@@ -13,6 +13,7 @@ const profile: Profile = {
   targets: [],
   usCitizen: true,
   hasClearance: false,
+  kit: EMPTY_KIT,
 };
 
 const role = (over: Partial<Role> = {}): Role => ({

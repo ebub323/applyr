@@ -1,7 +1,9 @@
 "use client";
-import { TARGET_OPTIONS } from "@/lib/resume";
+import { kitAsText } from "@/lib/kit";
+import { extractKit, TARGET_OPTIONS } from "@/lib/resume";
 import { DEFAULT_WEIGHTS } from "@/lib/score";
-import type { Profile, Weights } from "@/lib/types";
+import type { Kit, Profile, Weights } from "@/lib/types";
+import CopyButton from "./CopyButton";
 import { btnGhost, card, input, TagInput } from "./ui";
 
 const WEIGHT_LABELS: { key: keyof Weights; label: string; help: string }[] = [
@@ -23,8 +25,8 @@ function Toggle({ checked, onChange, label, help }: { checked: boolean; onChange
   );
 }
 
-export default function ProfileTab({ profile, weights, onProfile, onWeights, onNext }: {
-  profile: Profile; weights: Weights; onProfile: (p: Partial<Profile>) => void; onWeights: (w: Weights) => void; onNext: () => void;
+export default function ProfileTab({ profile, weights, resume, onProfile, onWeights, onNext }: {
+  profile: Profile; weights: Weights; resume: string; onProfile: (p: Partial<Profile>) => void; onWeights: (w: Weights) => void; onNext: () => void;
 }) {
   const toggleTarget = (id: string) => {
     const next = profile.targets.includes(id) ? profile.targets.filter((t) => t !== id) : [...profile.targets, id];
@@ -67,6 +69,26 @@ export default function ProfileTab({ profile, weights, onProfile, onWeights, onN
           </div>
           <label className="mt-3 block text-sm font-medium">Minimum hourly pay: <span className="font-mono">${profile.minHourly}</span></label>
           <input type="range" min={0} max={60} step={1} value={profile.minHourly} onChange={(e) => onProfile({ minHourly: Number(e.target.value) })} className="mt-2 w-full accent-neutral-900 dark:accent-white" />
+        </section>
+
+        <section className={`${card} p-5`}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div><h2 className="text-lg font-semibold">My apply kit</h2><p className="text-sm text-neutral-500">The details every application form asks for. Copy any one, or all of them, from any role.</p></div>
+            <div className="flex gap-2">
+              <button className={btnGhost} disabled={!resume} onClick={() => onProfile({ kit: { ...profile.kit, ...Object.fromEntries(Object.entries(extractKit(resume)).filter(([, v]) => v)) } })}>Re-read from my resume</button>
+              <CopyButton text={kitAsText(profile.kit)} label="Copy all" />
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {([["name", "Full name"], ["email", "Email"], ["phone", "Phone"], ["location", "City, state"], ["linkedin", "LinkedIn"], ["github", "GitHub"], ["website", "Website"], ["school", "School"], ["degree", "Degree"], ["gradDate", "Graduation"], ["gpa", "GPA"]] as [keyof Kit, string][]).map(([k, label]) => (
+              <label key={k} className="block text-xs text-neutral-500">{label}
+                <input className={`${input} mt-1 text-sm text-neutral-900 dark:text-neutral-100`} value={profile.kit[k]} onChange={(e) => onProfile({ kit: { ...profile.kit, [k]: e.target.value } })} />
+              </label>
+            ))}
+          </div>
+          <label className="mt-3 block text-xs text-neutral-500">The project I lead with in cover notes
+            <input className={`${input} mt-1 text-sm text-neutral-900 dark:text-neutral-100`} value={profile.kit.pitch} placeholder="Project name: what it does, in one line" onChange={(e) => onProfile({ kit: { ...profile.kit, pitch: e.target.value } })} />
+          </label>
         </section>
 
         <button className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900" onClick={onNext}>Find my matches →</button>
