@@ -172,6 +172,29 @@ export async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> 
   return (await res.json()) as T;
 }
 
+const LIST_TTL_MS = 20 * 60_000;
+
+/**
+ * Board lists are big (some are several MB) and change slowly, so repeat searches reuse the
+ * browser's own Cache API for twenty minutes. A cold search still goes to the network.
+ */
+export async function getListJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+  if (typeof caches === "undefined") return getJson<T>(url, signal);
+  try {
+    const cache = await caches.open("applyr-lists");
+    const hit = await cache.match(url);
+    if (hit && Date.now() - Number(hit.headers.get("x-cached-at") ?? 0) < LIST_TTL_MS) return (await hit.json()) as T;
+    const res = await fetch(url, { signal });
+    if (!res.ok) throw new Error(`${res.status}`);
+    const body = await res.text();
+    await cache.put(url, new Response(body, { headers: { "x-cached-at": String(Date.now()), "content-type": "application/json" } })).catch(() => {});
+    return JSON.parse(body) as T;
+  } catch (e) {
+    if (signal?.aborted) throw e;
+    return getJson<T>(url, signal);
+  }
+}
+
 type Draft = Omit<Role, "id" | "stage" | "notes">;
 
 interface GhJob { id: number; title: string; location?: { name?: string }; absolute_url: string; updated_at?: string }
@@ -181,7 +204,7 @@ interface AshbyJob { id: string; title: string; location?: string; jobUrl: strin
 export async function fetchBoard(b: Board, usOnly: boolean, signal?: AbortSignal, spec: SearchSpec = DEFAULT_SPEC): Promise<Role[]> {
   const drafts: Draft[] = [];
   if (b.source === "greenhouse") {
-    const d = await getJson<{ jobs: GhJob[] }>(`https://boards-api.greenhouse.io/v1/boards/${b.slug}/jobs`, signal);
+    const d = await getListJson<{ jobs: GhJob[] }>(`https://boards-api.greenhouse.io/v1/boards/${b.slug}/jobs`, signal);
     for (const j of d.jobs) {
       const loc = j.location?.name ?? "";
       if (!isRelevant(j.title, loc, usOnly, spec)) continue;
@@ -192,7 +215,7 @@ export async function fetchBoard(b: Board, usOnly: boolean, signal?: AbortSignal
       });
     }
   } else if (b.source === "lever") {
-    const d = await getJson<LeverJob[]>(`https://api.lever.co/v0/postings/${b.slug}?mode=json`, signal);
+    const d = await getListJson<LeverJob[]>(`https://api.lever.co/v0/postings/${b.slug}?mode=json`, signal);
     for (const j of d) {
       const loc = j.categories?.location ?? "";
       if (!isRelevant(j.text, loc, usOnly, spec)) continue;
@@ -204,7 +227,7 @@ export async function fetchBoard(b: Board, usOnly: boolean, signal?: AbortSignal
       });
     }
   } else {
-    const d = await getJson<{ jobs: AshbyJob[] }>(`https://api.ashbyhq.com/posting-api/job-board/${b.slug}`, signal);
+    const d = await getListJson<{ jobs: AshbyJob[] }>(`https://api.ashbyhq.com/posting-api/job-board/${b.slug}`, signal);
     for (const j of d.jobs) {
       const loc = j.location ?? "";
       if (!isRelevant(j.title, loc, usOnly, spec)) continue;

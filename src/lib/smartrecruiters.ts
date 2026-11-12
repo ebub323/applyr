@@ -1,4 +1,4 @@
-import { getJson, isRelevant, type SearchSpec } from "./ats";
+import { getListJson, isRelevant, type SearchSpec } from "./ats";
 import { fieldById } from "./fields";
 import { extractKeywords } from "./keywords";
 import type { Role } from "./types";
@@ -47,12 +47,12 @@ export async function fetchSmartRecruiters(usOnly: boolean, spec: SearchSpec, si
   const jobs: [typeof SR_COMPANIES[number], string][] = SR_COMPANIES.flatMap((c) => queries.map((q) => [c, q] as [typeof SR_COMPANIES[number], string]));
   const out = new Map<string, Role>();
   let i = 0;
-  await Promise.all(Array.from({ length: 6 }, async () => {
+  await Promise.all(Array.from({ length: 12 }, async () => {
     while (i < jobs.length) {
       const [c, q] = jobs[i++];
       try {
         const url = `https://api.smartrecruiters.com/v1/companies/${c.id}/postings?limit=100${q ? `&q=${encodeURIComponent(q)}` : ""}${usOnly ? "&country=us" : ""}${spec.city ? `&city=${encodeURIComponent(spec.city)}` : ""}`;
-        const d = await getJson<{ content?: SrPosting[] }>(url, signal);
+        const d = await getListJson<{ content?: SrPosting[] }>(url, signal);
         for (const p of d.content ?? []) {
           const role = mapPosting(p, c.id, c.label);
           if (!isRelevant(role.title, usOnly ? role.location || "United States" : "", usOnly, spec)) continue;

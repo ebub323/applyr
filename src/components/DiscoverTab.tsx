@@ -89,7 +89,7 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
       remoteRoles = dedupeAcross(a.status === "fulfilled" ? a.value : [], b.status === "fulfilled" ? b.value : []);
       if (a.status === "rejected" && b.status === "rejected" && !ac.signal.aborted) bad.push("Remote lists");
     }).finally(() => { if (!ac.signal.aborted) { publish(); tick(); } }));
-    tasks.push(pool(chosen, 5, async (b) => {
+    tasks.push(pool(chosen, 12, async (b) => {
       try { const got = await fetchBoard(b, usOnly, ac.signal, spec); boardRoles = [...boardRoles, ...got]; }   // read boardRoles after the await: other boards finish meanwhile
       catch { if (!ac.signal.aborted) bad.push(b.label); }
       if (!ac.signal.aborted) { publish(); tick(); }
@@ -104,7 +104,7 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
       .filter((x) => x.r.ext && !x.r.descriptionLoaded)
       .sort((a, b) => b.fit - a.fit).slice(0, ENRICH_TOP).map((x) => x.r);
     setStatus({ phase: "read", done: 0, total: top.length });
-    await pool(top, 6, async (r) => {
+    await pool(top, 12, async (r) => {
       try {
         const d = await fetchGreenhouseDetails(r.ext!.slug, r.ext!.id, r.company, ac.signal);
         if (ac.signal.aborted) return;
