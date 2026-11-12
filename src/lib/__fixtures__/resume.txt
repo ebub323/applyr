@@ -1,0 +1,47 @@
+EBUBE EZE
+Baltimore, MD  |  (410) 555-0100  |  name@example.com
+linkedin.com/in/example  |  github.com/ebub323
+EDUCATION
+Morgan State University	Expected Dec 2027
+Bachelor of Science, Computer Science  |  Baltimore, MD  |  GPA: 3.6
+Relevant Coursework: Software Engineering, Data Structures, Computer Networking, Theory of Computation
+TECHNICAL SKILLS
+Languages: Python, TypeScript, JavaScript, Java, C++, C#, SQL, HTML, CSS
+Frameworks and Libraries: React, React Native (Expo), Next.js, Node.js, Tailwind CSS, Flask, Django, Unity
+Databases: PostgreSQL, Supabase, MySQL
+Cloud, DevOps and Tools: AWS (S3, RDS, ECS, IAM, CloudWatch), Google Cloud Platform, Docker, Terraform, Git, GitHub Actions, CI/CD, Linux
+Concepts: REST APIs, Unit Testing, Object-Oriented Programming, Data Structures and Algorithms, Relational Database Design
+PROJECTS
+Applyr: Resume Grader and Job-Match Tool	Nov 2026
+Technologies: TypeScript, Next.js, Vitest, GitHub Actions   |   applyr.techboy.dev   |   github.com/ebub323/applyr
+Built a browser-based tool that grades an uploaded resume (PDF, DOCX or text, parsed on-device) with 15 transparent checks across ATS readiness, impact and technical depth.
+Searches 31 live Greenhouse, Lever and Ashby boards from the browser, deduplicates roles, and ranks each 0-100 with reasons.
+Re-scores every role as if a missing skill were learned, showing which single skill lifts the most roles to a strong match.
+Wrote 30 unit tests for the scorer, grader and search filters; CI runs them and deploys on every push.
+Skolmark: Cross-Platform Student Marketplace	Oct 2026
+Technologies: TypeScript, React Native (Expo), Supabase, PostgreSQL
+Built one Expo and React Native codebase in TypeScript that runs as the iOS app, the Android app and the website.
+Designed a 14-table campus-scoped PostgreSQL schema with 29 row-level security policies, so a student only sees their own school's listings and conversations.
+Modeled school email-domain verification, listings, bookings, reviews and threaded messaging across 434 lines of versioned SQL migrations, with magic-link authentication.
+The Hollow: Unity Game and Editor Tooling	Oct 2026
+Technologies: C#, Unity 6, Git
+Built a wave-based arena game in C# over 42 commits: 7,740 lines across 45 scripts, a multi-phase boss, spawn management and a cued audio system.
+Wrote 3,657 lines of custom Unity editor tooling that procedurally assembles the arena, zones, lighting and UI instead of hand-placing scene objects.
+CreditBridge: Transfer-Credit Degree Planner	In progress
+Technologies: TypeScript, Next.js, Vitest
+Building a planner that maps completed community-college courses to a target degree's requirements to show what transfers and what remains.
+Modeling course equivalencies and prerequisites as a constraint problem to find the shortest remaining path to graduation.
+ShiftStack: Work and Class Schedule Planner	In progress
+Technologies: TypeScript, Next.js, Vitest
+Building a scheduler that reconciles work shifts with class times, flags conflicts, and projects earnings against a target.
+Handling recurring events, week boundaries and daylight-saving changes, with calendar export.
+EXPERIENCE
+Repair Technician	Sep 2024 - Dec 2025
+Best Buy, Geek Squad  |  White Marsh, MD
+Diagnosed and resolved hardware and software faults on laptops, desktops and mobile devices, isolating root causes from vague problem reports.
+Performed OS installations, malware removal and data migration under service-level time pressure; documented every repair in a ticketing system and explained trade-offs to customers in plain language.
+CERTIFICATIONS
+CompTIA Security+	Dec 2025
+LEADERSHIP AND ACTIVITIES
+Treasurer, African Students Organization (budget planning for outreach events)	Aug 2024 - Present
+Member, BIT Bros Computing Society (coding challenges, algorithm workshops, security drills)	Sep 2024 - Present

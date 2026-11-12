@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { exportBackup, parseBackup } from "./backup";
 import { dedupeAcross, mapListing, parseCommunity, sourceFromUrl } from "./community";
@@ -110,7 +111,7 @@ describe("pitch from a PDF-style wrapped bullet", () => {
 });
 
 describe("apply kit", () => {
-  const fx = (n: string) => require("node:fs").readFileSync(`/tmp/${n}`, "utf8") as string;
+  const fx = (n: string) => readFileSync(new URL(`./__fixtures__/${n}`, import.meta.url), "utf8");
   it("pulls the form details out of a resume", () => {
     const k = extractKit(SAMPLE_RESUME);
     expect(k).toMatchObject({ name: "Alex Rivera", email: "alex.rivera@example.com", location: "Baltimore, MD", school: "State University", gradDate: "May 2027", gpa: "3.4" });
@@ -118,7 +119,7 @@ describe("apply kit", () => {
     expect(k.pitch).toMatch(/^Campus Events App: Built a web app/);
   });
   it("reads a real resume, not just the sample", () => {
-    const k = extractKit(fx("fixture_resume.txt"));
+    const k = extractKit(fx("resume.txt"));
     expect(k.name).toBe("Ebube Eze");
     expect(k.school).toBe("Morgan State University");
     expect(k.gradDate).toBe("Dec 2027");
