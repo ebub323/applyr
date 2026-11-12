@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@mlc-ai/web-llm": "^0.2.88",
     "jszip": "^3.10.2",
     "next": "16.4.6",
     "pdfjs-dist": "^6.5.438",

@@ -1,6 +1,8 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchBoard, fetchGreenhouseDetails, PRESET_BOARDS, type AtsSource, type Board } from "@/lib/ats";
+import { fetchBoard, fetchGreenhouseDetails, PRESET_BOARDS, type AtsSource, type Board, type SearchSpec } from "@/lib/ats";
+import { isTechField } from "@/lib/fields";
+import { fetchRemotive, REMOTIVE_URL } from "@/lib/remotive";
 import { COMMUNITY_REPO, dedupeAcross, fetchCommunity } from "@/lib/community";
 import { isNewSince } from "@/lib/habit";
 import { matchDetail, scoreFit, type FitResult } from "@/lib/score";
@@ -13,7 +15,7 @@ const keyOf = (b: Board) => `${b.source}:${b.slug}`;
 const STRONG = 70;
 const ENRICH_TOP = 30;
 const KEEP_FOR_QUEUE = 200;
-const SOURCE_NAME: Record<string, string> = { workday: "Workday", greenhouse: "Greenhouse", lever: "Lever", ashby: "Ashby", other: "Company site", indeed: "Indeed", handshake: "Handshake", manual: "Manual" };
+const SOURCE_NAME: Record<string, string> = { remotive: "Remotive", workday: "Workday", greenhouse: "Greenhouse", lever: "Lever", ashby: "Ashby", other: "Company site", indeed: "Indeed", handshake: "Handshake", manual: "Manual" };
 const today = () => new Date().toISOString().slice(0, 10);
 
 /** Runs `worker` over `items` with at most `n` in flight. */
@@ -28,9 +30,18 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
   profile: Profile; weights: Weights; trackedIds: Set<string>; onTrack: (r: Role) => void; runSignal: number;
   saved: Role[]; lastSearchAt: string; onSearched: (top: Role[], day: string) => void; resumeText: string;
 }) {
+  const wantsTech = profile.targets.length === 0 || profile.targets.some(isTechField);
+  const wantsOther = profile.targets.some((t) => !isTechField(t));
+  const spec: SearchSpec = useMemo(() => ({ targets: profile.targets, wantTitles: profile.wantTitles, level: profile.level ?? "entry" }), [profile.targets, profile.wantTitles, profile.level]);
   const [boards, setBoards] = useState<Board[]>(PRESET_BOARDS);
-  const [picked, setPicked] = useState<Set<string>>(() => new Set(PRESET_BOARDS.map(keyOf)));
-  const [community, setCommunity] = useState(true);
+  // Boards that hire for what you picked start on; a click overrides, and the defaults keep following your profile.
+  const [overrides, setOverrides] = useState<Record<string, boolean>>({});
+  const defaultOn = (b: Board) => (b.group === "general" ? wantsOther || !wantsTech : wantsTech || wantsOther);
+  const isOn = (b: Board) => overrides[keyOf(b)] ?? defaultOn(b);
+  const [communityPick, setCommunityPick] = useState<boolean | null>(null);
+  const community = communityPick ?? wantsTech;
+  const setCommunity = (v: boolean) => setCommunityPick(v);
+  const [remote, setRemote] = useState(true);
   const [customSource, setCustomSource] = useState<AtsSource>("greenhouse");
   const [customSlug, setCustomSlug] = useState("");
   const [usOnly, setUsOnly] = useState(true);
@@ -57,20 +68,21 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
   const run = useCallback(async () => {
     abort.current?.abort();
     const ac = new AbortController(); abort.current = ac;
-    const chosen = boards.filter((b) => picked.has(keyOf(b)));
-    if (!chosen.length && !community) return;
+    const chosen = boards.filter(isOn);
+    if (!chosen.length && !community && !remote) return;
     setResults([]); setFailed([]); setOpen(null); setFromSaved(false);
     setPrevious(lastSearchAt);
-    setStatus({ phase: "search", done: 0, total: chosen.length + (community ? 1 : 0) });
-    let boardRoles: Role[] = []; let communityRoles: Role[] = [];
+    setStatus({ phase: "search", done: 0, total: chosen.length + (community ? 1 : 0) + (remote ? 1 : 0) });
+    let boardRoles: Role[] = []; let communityRoles: Role[] = []; let remoteRoles: Role[] = [];
     const bad: string[] = [];
-    const publish = () => setResults(dedupeAcross(boardRoles, communityRoles));
+    const publish = () => setResults(dedupeAcross(dedupeAcross(boardRoles, communityRoles), remoteRoles));
     const tick = () => { if (!ac.signal.aborted) setStatus((s) => ({ ...s, done: s.done + 1 })); };
 
     const tasks: Promise<void>[] = [];
     if (community) tasks.push(fetchCommunity(usOnly, ac.signal).then((r) => { communityRoles = r; }).catch(() => { if (!ac.signal.aborted) bad.push("Community list"); }).finally(() => { if (!ac.signal.aborted) { publish(); tick(); } }));
+    if (remote) tasks.push(fetchRemotive(usOnly, spec, ac.signal).then((r) => { remoteRoles = r; }).catch(() => { if (!ac.signal.aborted) bad.push("Remotive"); }).finally(() => { if (!ac.signal.aborted) { publish(); tick(); } }));
     tasks.push(pool(chosen, 5, async (b) => {
-      try { const got = await fetchBoard(b, usOnly, ac.signal); boardRoles = [...boardRoles, ...got]; }   // read boardRoles after the await: other boards finish meanwhile
+      try { const got = await fetchBoard(b, usOnly, ac.signal, spec); boardRoles = [...boardRoles, ...got]; }   // read boardRoles after the await: other boards finish meanwhile
       catch { if (!ac.signal.aborted) bad.push(b.label); }
       if (!ac.signal.aborted) { publish(); tick(); }
     }));
@@ -95,10 +107,10 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
     });
     if (ac.signal.aborted) return;
     setStatus((s) => ({ ...s, phase: "done" }));
-    const merged = dedupeAcross(boardRoles, communityRoles);
+    const merged = dedupeAcross(dedupeAcross(boardRoles, communityRoles), remoteRoles);
     const best = merged.map((r) => ({ r, fit: scoreFit(r, profile, weights).fit })).sort((a, b) => b.fit - a.fit).slice(0, KEEP_FOR_QUEUE).map((x) => x.r);
     onSearched(best, today());
-  }, [boards, picked, community, usOnly, profile, weights, lastSearchAt, onSearched]);
+  }, [boards, overrides, wantsTech, wantsOther, community, remote, usOnly, spec, profile, weights, lastSearchAt, onSearched]);
 
   // "Find my matches" elsewhere in the app bumps runSignal to start a search.
   const lastSignal = useRef(0);
@@ -140,7 +152,7 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
     if (!slug) return;
     const b: Board = { source: customSource, slug, label: slug.charAt(0).toUpperCase() + slug.slice(1) };
     if (!boards.some((x) => keyOf(x) === keyOf(b))) setBoards([...boards, b]);
-    setPicked(new Set(picked).add(keyOf(b)));
+    setOverrides({ ...overrides, [keyOf(b)]: true });
     setCustomSlug("");
   };
 
@@ -152,22 +164,27 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold">Search live</h2>
-            <p className="text-sm text-neutral-500">Reads real postings straight from public sources. Nothing about you is sent.</p>
+            <p className="text-sm text-neutral-500">Reads real postings for the fields you chose straight from public sources. Nothing about you is sent.</p>
           </div>
-          <button className={btn} onClick={() => void run()} disabled={busy || (picked.size === 0 && !community)}>
+          <button className={btn} onClick={() => void run()} disabled={busy || (!boards.some(isOn) && !community && !remote)}>
             {busy ? (status.phase === "search" ? `Searching ${status.done}/${status.total}...` : `Reading descriptions ${status.done}/${status.total}...`) : "Search now"}
           </button>
         </div>
         <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl bg-neutral-100 p-3 text-sm dark:bg-neutral-800">
+          <input type="checkbox" checked={remote} onChange={(e) => setRemote(e.target.checked)} className="mt-0.5 size-4 accent-neutral-900 dark:accent-white" />
+          <span><span className="font-medium">Include remote jobs in every field</span> <span className="text-neutral-500">(support, sales, finance, healthcare, teaching, design and more)</span>
+            <span className="block text-xs text-neutral-500">Remote listings from <a className="underline" href={REMOTIVE_URL} target="_blank" rel="noreferrer">Remotive</a>, linked back to their page.</span></span>
+        </label>
+        <label className="mt-2 flex cursor-pointer items-start gap-3 rounded-xl bg-neutral-100 p-3 text-sm dark:bg-neutral-800">
           <input type="checkbox" checked={community} onChange={(e) => setCommunity(e.target.checked)} className="mt-0.5 size-4 accent-neutral-900 dark:accent-white" />
-          <span><span className="font-medium">Include the community internship list</span> <span className="text-neutral-500">(about 1,700 software and data roles, including Workday and iCIMS portals the company boards cannot reach)</span>
+          <span><span className="font-medium">Include the community internship list</span> <span className="text-neutral-500">(software and data internships only; about 1,700 roles, including Workday and iCIMS portals the company boards cannot reach)</span>
             <span className="block text-xs text-neutral-500">Maintained by <a className="underline" href={COMMUNITY_REPO} target="_blank" rel="noreferrer">SimplifyJobs and Pitt CSC</a>. Read live from their public repository, never copied.</span></span>
         </label>
         <div className="mt-4 flex flex-wrap gap-2">
           {boards.map((b) => {
-            const on = picked.has(keyOf(b));
+            const on = isOn(b);
             return (
-              <button key={keyOf(b)} aria-pressed={on} onClick={() => { const n = new Set(picked); if (on) n.delete(keyOf(b)); else n.add(keyOf(b)); setPicked(n); }}
+              <button key={keyOf(b)} aria-pressed={on} onClick={() => setOverrides({ ...overrides, [keyOf(b)]: !on })}
                 className={`rounded-full border px-3 py-1 text-xs transition-colors ${on ? "border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900" : "border-neutral-300 hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"}`}>
                 {b.label}
               </button>

@@ -12,7 +12,7 @@ export function coverNote(kit: Kit, role: Pick<Role, "title" | "company" | "keyw
   const study = kit.degree ? `working toward a ${plain(kit.degree)}${where}` : kit.school ? `a student${where}` : "";
   const intro = study ? `I'm ${study}${grad} and I'm applying for the ${role.title} role.` : `I'm applying for the ${role.title} role.`;
   const parts = [`Hi ${role.company} team,`, intro];
-  if (have.length) parts.push(`The technologies this role names that I work with most are ${joinList(have)}.`);
+  if (have.length) parts.push(`The skills this role names that I work with most are ${joinList(have)}.`);
   if (kit.pitch) parts.push(`A project I would point you to: ${kit.pitch}${/[.\u2026!?]$/.test(kit.pitch) ? "" : "."}`);
   parts.push("I'd welcome the chance to talk. Thank you for your time.");
   const sig = [kit.name, [kit.email, kit.phone].filter(Boolean).join(" | "), [kit.linkedin, kit.github].filter(Boolean).join(" | ")].filter(Boolean);

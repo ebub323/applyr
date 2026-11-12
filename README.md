@@ -2,7 +2,7 @@
 
 **Live:** https://applyr.techboy.dev · **How it works:** https://applyr.techboy.dev/how-it-works/
 
-Upload your resume, see how it grades, then search live internship and entry-level postings
+Upload your resume, see how it grades, then search live postings in any field (healthcare, sales, support, finance, education, trades, software and more)
 ranked by how well you match. Everything runs in the browser: your resume is never uploaded.
 
 ## What it does
@@ -48,3 +48,10 @@ npm run build   # static export to out/
 ## Stack
 
 Next.js 16 (App Router, static export) · TypeScript · Tailwind v4 · pdf.js and JSZip (loaded only when a file is uploaded) · Vitest · GitHub Actions
+
+## Any field, and a local AI
+
+- **Fields.** Pick the kinds of work you want (21 fields, software and otherwise) and a level (entry or any). Titles, skills, scoring and the resume grade all follow: a nurse is not asked for a GitHub link.
+- **Sources.** Company boards (now including care, retail, food, finance and education employers) plus remote jobs in every field from Remotive, cached six hours.
+- **Tailor with a local AI.** In any role, "Suggest changes" has a small model reword your bullets and write a summary for that job. It runs on your machine: through Ollama if it is running, otherwise inside the browser with WebLLM (about 1 GB, downloaded once). The model never sees the employer's name, works on one bullet at a time, and every line it writes is checked in code: anything that adds a number, tool or name your resume does not already state is discarded. Gaps are listed by vocabulary matching, not by the model.
+- For Ollama on a deployed site, start it with `OLLAMA_ORIGINS=https://your-site`.

@@ -8,7 +8,7 @@ import { btnGhost, card, input, TagInput } from "./ui";
 
 const WEIGHT_LABELS: { key: keyof Weights; label: string; help: string }[] = [
   { key: "title", label: "Title fit", help: "How much the job title matches what you want" },
-  { key: "skills", label: "Skill overlap", help: "How many of the posting's technologies you have" },
+  { key: "skills", label: "Skill overlap", help: "How many of the posting's skills and tools you have" },
   { key: "location", label: "Location", help: "Home area, remote, or having to relocate" },
   { key: "eligibility", label: "Eligibility", help: "Citizenship and clearance requirements" },
   { key: "pay", label: "Pay floor", help: "Postings paying under your minimum" },
@@ -39,17 +39,31 @@ export default function ProfileTab({ profile, weights, resume, onProfile, onWeig
         <section className={`${card} p-5`}>
           <h2 className="text-lg font-semibold">What are you looking for?</h2>
           <p className="mt-1 text-sm text-neutral-500">Every answer here changes how roles are ranked, immediately.</p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {TARGET_OPTIONS.map((o) => {
-              const on = profile.targets.includes(o.id);
-              return (
-                <button key={o.id} onClick={() => toggleTarget(o.id)} aria-pressed={on}
-                  className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${on ? "border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900" : "border-neutral-300 hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"}`}>
-                  {o.label}
-                </button>
-              );
-            })}
+          {[{ name: "Any kind of work", tech: false }, { name: "Software and IT", tech: true }].map((g) => (
+            <div key={g.name} className="mt-4">
+              <div className="text-xs font-semibold uppercase tracking-wide text-neutral-500">{g.name}</div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {TARGET_OPTIONS.filter((o) => o.tech === g.tech).map((o) => {
+                  const on = profile.targets.includes(o.id);
+                  return (
+                    <button key={o.id} onClick={() => toggleTarget(o.id)} aria-pressed={on}
+                      className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${on ? "border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900" : "border-neutral-300 hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"}`}>
+                      {o.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
+          <label className="mt-5 block text-sm font-medium">How experienced am I?</label>
+          <div className="mt-1.5 inline-flex rounded-lg border border-neutral-300 p-0.5 text-sm dark:border-neutral-700" role="group" aria-label="Experience level">
+            {([["entry", "Entry level and internships"], ["any", "Any level"]] as const).map(([v, label]) => (
+              <button key={v} aria-pressed={profile.level === v} onClick={() => onProfile({ level: v })}
+                className={`rounded-md px-3 py-1 transition-colors ${profile.level === v ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900" : "text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"}`}>{label}</button>
+            ))}
           </div>
+          <p className="mt-1 text-xs text-neutral-500">Entry level hides senior, lead and manager titles. Any level keeps everything in your fields.</p>
 
           <label className="mt-5 block text-sm font-medium">Title keywords I would apply to</label>
           <div className="mt-1.5"><TagInput value={profile.wantTitles} onChange={(v) => onProfile({ wantTitles: v })} placeholder="Add a title and press Enter" /></div>

@@ -4,6 +4,7 @@ import { coverNote, kitAsText, tailoredSkillsLine } from "@/lib/kit";
 import { extractKeywords } from "@/lib/keywords";
 import { matchDetail, type FitResult } from "@/lib/score";
 import type { Profile, Role } from "@/lib/types";
+import AiTailor from "./AiTailor";
 import CopyButton from "./CopyButton";
 import ScoreBreakdown from "./ScoreBreakdown";
 import { card, input } from "./ui";
@@ -37,7 +38,7 @@ export default function MatchDetail({ role, result, profile, resumeText }: { rol
           <div>
             <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">Skills match</h4>
             {m.coverage === null ? (
-              <p className="text-sm text-neutral-500">No technologies named in the title. Open the role and read the description to see the skill match.</p>
+              <p className="text-sm text-neutral-500">No skills named in the title. Open the role and read the description to see the skill match.</p>
             ) : (
               <>
                 <div className="text-2xl font-semibold">{m.have.length} <span className="text-base font-normal text-neutral-500">of {role.keywords.length} you have</span></div>
@@ -60,13 +61,14 @@ export default function MatchDetail({ role, result, profile, resumeText }: { rol
 
       {tab === "tailor" && (
         <div className="space-y-4 text-sm">
+          <AiTailor role={role} profile={profile} resumeText={resumeText} />
           {named.length === 0 ? (
-            <p className="text-neutral-500">This role names no technologies we could read yet. Open its description, then come back here.</p>
+            <p className="text-neutral-500">This role names no skills we could read yet. Open its description, then come back here.</p>
           ) : (
             <>
               <div>
                 <div className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Already on your resume, so lead with them</div>
-                <div className="mt-2 flex flex-wrap gap-1.5">{onResume.length ? onResume.map((k) => <span key={k} className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-700 dark:text-emerald-400">{k}</span>) : <span className="text-neutral-400">None of the role&rsquo;s technologies appear on your resume.</span>}</div>
+                <div className="mt-2 flex flex-wrap gap-1.5">{onResume.length ? onResume.map((k) => <span key={k} className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-700 dark:text-emerald-400">{k}</span>) : <span className="text-neutral-400">None of the role&rsquo;s skills appear on your resume.</span>}</div>
               </div>
               {notOnResume.length > 0 && (
                 <div>

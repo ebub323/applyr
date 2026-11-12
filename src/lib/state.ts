@@ -61,7 +61,7 @@ export function useAppState() {
 
   useEffect(() => {
     if (!hydrated) return;
-    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { /* quota or private mode */ }
+    try { localStorage.setItem(KEY, JSON.stringify(state, (k, v) => (k === "description" ? undefined : v))); } catch { /* quota or private mode */ }
   }, [state, hydrated]);
 
   const update = useCallback((fn: (s: AppState) => AppState) => setState(fn), []);

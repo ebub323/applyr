@@ -1,3 +1,4 @@
+import { FIELDS } from "./fields";
 import { extractKeywords } from "./keywords";
 
 /**
@@ -22,7 +23,11 @@ const ACTION_VERBS = new Set(
    "established coordinated organized presented researched tested debugged refactored documented trained mentored delivered " +
    "performed repaired installed modeled modelled specified planned scheduled tracked monitored secured administered " +
    "ingested weighted wired spearheaded owned drove improved cut grew generated processed completed contributed collaborated " +
-   "participated manage treasurer").split(" "),
+   "participated manage treasurer " +
+   "served supported sold provided handled cared treated educated taught tutored supervised opened closed balanced reconciled prepared " +
+   "negotiated recruited hired onboarded stocked cleaned operated drove assembled inspected processed advised counseled assessed " +
+   "answered resolved greeted cooked baked scheduled dispatched audited filed invoiced budgeted forecasted promoted wrote edited " +
+   "photographed filmed produced hosted raised sourced screened interviewed enrolled administered").split(" "),
 );
 
 const WEAK = [
@@ -31,15 +36,7 @@ const WEAK = [
 ];
 
 /** skill -> the kind of role it points at */
-const DOMAINS: { id: string; label: string; titles: string[]; skills: string[] }[] = [
-  { id: "web", label: "Frontend / full-stack", titles: ["frontend", "front end", "full stack", "web developer"], skills: ["React", "Next.js", "TypeScript", "JavaScript", "HTML", "CSS", "Tailwind", "Node.js", "Angular", "Vue", "Redux"] },
-  { id: "backend", label: "Backend", titles: ["backend", "back end", "software engineer intern"], skills: ["Python", "Java", "Go", "SQL", "PostgreSQL", "MySQL", "Node.js", "Django", "Flask", "REST", "GraphQL", "Redis", "Spring", "Express", "C#"] },
-  { id: "infra", label: "Platform / DevOps / cloud", titles: ["platform", "infrastructure", "devops", "cloud"], skills: ["AWS", "GCP", "Azure", "Docker", "Kubernetes", "Terraform", "Linux", "CI/CD", "Bash"] },
-  { id: "data", label: "Data / machine learning", titles: ["data", "machine learning"], skills: ["Python", "SQL", "Machine Learning", "Pandas", "NumPy", "TensorFlow", "PyTorch", "Tableau", "Excel", "Power BI"] },
-  { id: "mobile", label: "Mobile", titles: ["mobile", "ios", "android"], skills: ["React Native", "Swift", "Kotlin", "iOS", "Android", "Flutter"] },
-  { id: "security", label: "Security / IT", titles: ["security", "it support"], skills: ["Security", "Networking", "Active Directory", "PowerShell", "Linux"] },
-  { id: "swe", label: "General software engineering", titles: ["software engineer intern", "software engineering intern", "software developer intern"], skills: ["Python", "Java", "C++", "C#", "JavaScript", "TypeScript", "Git", "Data Structures", "Algorithms", "Object-Oriented Programming"] },
-];
+const DOMAINS = FIELDS;
 
 export interface Check {
   id: string;
@@ -203,6 +200,17 @@ export function parseResume(text: string, now: number = Date.now()): ResumeAnaly
     id, group, label, earned: Math.round(clamp01(ratio) * max * 10) / 10, max, detail, fix: ratio >= 0.999 ? undefined : fix,
   });
 
+  const have = new Set(skills);
+  const ranked = DOMAINS
+    .map((d) => ({ id: d.id, label: d.label, titles: d.titles, tech: d.tech, strength: d.skills.filter((s) => have.has(s)).length / Math.min(9, d.skills.length) }))
+    .sort((a, b) => b.strength - a.strength);
+  // A resume whose strongest direction is not technical is graded on the things that matter for that work.
+  const techy = !!github || !ranked[0] || ranked[0].strength <= 0.3 || ranked[0].tech;
+  const targets: Target[] = ranked
+    .filter((t) => t.strength > 0.3)
+    .slice(0, 4)
+    .map(({ tech: _t, ...t }) => ({ ...t, strength: Math.min(1, t.strength) }));
+
   const empty = words.length < 25;
   const checks: Check[] = empty ? [] : [
     mk("contact", "ats", "Email and phone", ((email ? 1 : 0) + (phone ? 1 : 0)) / 2, 8,
@@ -213,28 +221,36 @@ export function parseResume(text: string, now: number = Date.now()): ResumeAnaly
       oddCharacters.length ? `Found ${oddCharacters.length} symbol type(s) (like dashes or curly quotes) that some older parsers garble.` : "No risky symbols.",
       "Swap curly quotes and long dashes for plain ones."),
     mk("length", "ats", "Right length", words.length >= 250 && words.length <= 750 ? 1 : words.length < 250 ? words.length / 250 : Math.max(0.4, 750 / words.length), 5,
-      `${words.length} words. Aim for 300 to 650 for an internship resume.`, words.length < 250 ? "Add detail: projects and bullets with results." : "Trim to one page."),
-    mk("links", "ats", "LinkedIn and GitHub", links / 2, 5, links === 2 ? "Both found." : `Missing ${[!linkedin && "LinkedIn", !github && "GitHub"].filter(Boolean).join(" and ")}.`, "Add your LinkedIn and GitHub URLs under your name."),
+      `${words.length} words. Aim for 300 to 650 for a one-page resume.`, words.length < 250 ? "Add detail: bullets with results." : "Trim to one page."),
+    techy
+      ? mk("links", "ats", "LinkedIn and GitHub", links / 2, 5, links === 2 ? "Both found." : `Missing ${[!linkedin && "LinkedIn", !github && "GitHub"].filter(Boolean).join(" and ")}.`, "Add your LinkedIn and GitHub URLs under your name.")
+      : mk("links", "ats", "LinkedIn", linkedin ? 1 : 0, 5, linkedin ? "Found." : "No LinkedIn URL found.", "Add your LinkedIn URL under your name. Recruiters look you up."),
 
     mk("verbs", "impact", "Bullets start with action verbs", verbRatio / 0.8, 12,
       bullets.length ? `${actionVerbBullets} of ${bullets.length} bullets open with a strong verb.` : "No bullets detected.", "Start every bullet with a verb: Built, Designed, Reduced, Shipped."),
     mk("metrics", "impact", "Bullets show numbers", quantRatio / 0.5, 15,
-      bullets.length ? `${quantifiedBullets} of ${bullets.length} bullets contain a number.` : "No bullets detected.", "Add a number to each bullet: users, lines of code, time saved, tables, percent."),
+      bullets.length ? `${quantifiedBullets} of ${bullets.length} bullets contain a number.` : "No bullets detected.", techy ? "Add a number to each bullet: users, lines of code, time saved, tables, percent." : "Add a number to each bullet: customers served, patients per shift, dollars handled, team size, percent improved."),
     mk("weak", "impact", "No filler phrases", weakPhrases.length === 0 ? 1 : Math.max(0, 1 - weakPhrases.length / 3), 8,
       weakPhrases.length ? `Found: ${weakPhrases.join(", ")}.` : "No filler found.", "Replace phrases like \"responsible for\" and \"helped with\" with what you actually did."),
 
-    mk("breadth", "technical", "Technical breadth", skills.length / 10, 10, `${skills.length} recognised technologies.`, "List the languages, frameworks and tools you have really used."),
-    mk("skillsec", "technical", "Skills section", has("skills") ? 1 : 0, 4, has("skills") ? "Found." : "No skills section found.", "Add a Technical Skills section grouped by type."),
-    mk("projlinks", "technical", "Projects link to proof", has("projects") ? Math.min(1, projectLinks / 2) : 0, 6,
-      has("projects") ? `${projectLinks} link(s) in your projects.` : "No projects section.", "Link each project to its live site or repository."),
+    mk("breadth", "technical", techy ? "Technical breadth" : "Skills and tools", skills.length / (techy ? 10 : 6), 10, `${skills.length} recognised ${techy ? "technologies" : "skills and tools"}.`, techy ? "List the languages, frameworks and tools you have really used." : "List the systems, certifications and skills you have really used (software, licences, languages)."),
+    mk("skillsec", "technical", "Skills section", has("skills") ? 1 : 0, 4, has("skills") ? "Found." : "No skills section found.", techy ? "Add a Technical Skills section grouped by type." : "Add a Skills section: tools, systems, languages, certifications."),
+    ...(techy ? [
+      mk("projlinks", "technical", "Projects link to proof", has("projects") ? Math.min(1, projectLinks / 2) : 0, 6,
+        has("projects") ? `${projectLinks} link(s) in your projects.` : "No projects section.", "Link each project to its live site or repository."),
+    ] : [
+      mk("expsec", "technical", "Work experience", has("experience") ? 1 : 0, 6, has("experience") ? "Found." : "No experience section found.", "Add an Experience section with your roles, employers and dates."),
+    ]),
 
     mk("edu", "completeness", "Education with a date", has("education") && gradYear ? 1 : has("education") ? 0.5 : 0, 5,
       gradYear ? `Graduation year ${gradYear}.` : "No graduation date found.", "Add your expected graduation month and year."),
     mk("gpa", "completeness", "GPA (if 3.0 or higher)", gpa === undefined ? 0.4 : gpa >= 3 ? 1 : 0.6, 3,
       gpa === undefined ? "No GPA listed." : `GPA ${gpa}.`, "If your GPA is 3.0 or above, list it."),
-    mk("certs", "completeness", "Certification", has("certifications") ? 1 : 0, 3, has("certifications") ? "Found." : "None listed.", "Add any certifications, such as Security+ or AWS."),
-    mk("projcount", "completeness", "Two or more projects", Math.min(1, (sectionsText.projects ?? []).filter((l) => /[|\t]|\b(20\d\d)\b/.test(l)).length / 2), 4,
+    mk("certs", "completeness", "Certification", has("certifications") ? 1 : 0, 3, has("certifications") ? "Found." : "None listed.", techy ? "Add any certifications, such as Security+ or AWS." : "Add any licences or certifications (CPR, RN, CDL, OSHA, PMP...)."),
+    ...(techy ? [
+      mk("projcount", "completeness", "Two or more projects", Math.min(1, (sectionsText.projects ?? []).filter((l) => /[|\t]|\b(20\d\d)\b/.test(l)).length / 2), 4,
       has("projects") ? "Counted from the Projects section." : "No projects section.", "Build and list at least two projects you can discuss."),
+    ] : []),
   ];
 
   const groupScores = { ats: { earned: 0, max: 0 }, impact: { earned: 0, max: 0 }, technical: { earned: 0, max: 0 }, completeness: { earned: 0, max: 0 } };
@@ -250,14 +266,6 @@ export function parseResume(text: string, now: number = Date.now()): ResumeAnaly
 
   const fixes = [...checks].filter((c) => c.fix).sort((a, b) => (b.max - b.earned) - (a.max - a.earned)).slice(0, 5).map((c) => c.fix as string);
 
-  const have = new Set(skills);
-  const targets: Target[] = DOMAINS
-    .map((d) => ({ id: d.id, label: d.label, titles: d.titles, strength: d.skills.filter((s) => have.has(s)).length / Math.min(9, d.skills.length) }))
-    .filter((t) => t.strength > 0.3)
-    .sort((a, b) => b.strength - a.strength)
-    .slice(0, 4)
-    .map((t) => ({ ...t, strength: Math.min(1, t.strength) }));
-
   return {
     empty, wordCount: words.length, email, phone, linkedin, github, sections, bullets, actionVerbBullets, quantifiedBullets,
     weakPhrases, skills, gradYear, gpa, isStudent, oddCharacters, checks, groupScores, overall, grade, level, fixes, targets,
@@ -265,7 +273,7 @@ export function parseResume(text: string, now: number = Date.now()): ResumeAnaly
   };
 }
 
-export const TARGET_OPTIONS = DOMAINS.map((d) => ({ id: d.id, label: d.label, titles: d.titles }));
+export const TARGET_OPTIONS = DOMAINS.map((d) => ({ id: d.id, label: d.label, titles: d.titles, tech: d.tech }));
 
 export const SAMPLE_RESUME = `ALEX RIVERA
 Baltimore, MD | (410) 555-0142 | alex.rivera@example.com

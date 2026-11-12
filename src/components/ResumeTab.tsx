@@ -57,7 +57,7 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
         <h1 className="text-3xl font-semibold tracking-tight">Know where you stand before you apply.</h1>
         <p className="mt-3 text-neutral-600 dark:text-neutral-400">
           Upload your resume. Applyr grades it the way an applicant tracking system and a recruiter would, shows exactly what to fix,
-          then finds live internships and entry-level roles ranked by how well you match.
+          then finds live jobs in any field, from healthcare and sales to software, ranked by how well you match. A small AI on your own computer can tailor your resume to each one.
         </p>
         <div
           onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
@@ -96,7 +96,7 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
             <span className="text-lg text-neutral-600 dark:text-neutral-400">{a.level}</span>
           </div>
           <p className="mt-1 text-sm text-neutral-500">
-            {resumeName} · {a.wordCount} words · {a.bullets.length} bullets · {a.skills.length} technologies recognised
+            {resumeName} · {a.wordCount} words · {a.bullets.length} bullets · {a.skills.length} skills and tools recognised
             {a.gradYear ? ` · class of ${a.gradYear}` : ""}
           </p>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -205,7 +205,7 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
                   <div className="mt-1 h-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800"><div className="h-full rounded-full bg-emerald-500" style={{ width: `${t.strength * 100}%` }} /></div>
                 </li>
               ))}
-              {!a.targets.length && <li className="text-sm text-neutral-400">Add more technologies to see a clear direction.</li>}
+              {!a.targets.length && <li className="text-sm text-neutral-400">Add more skills and tools to see a clear direction.</li>}
             </ul>
             <button className={`${btn} mt-4`} disabled={!a.targets.length} onClick={() => onUseTargets(a.targets.map((t) => t.id), a.targets.flatMap((t) => t.titles))}>Target these roles</button>
           </section>

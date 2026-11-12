@@ -6,6 +6,7 @@ export const DEFAULT_PROFILE: Profile = {
   homeMetro: "Baltimore, Washington, DC, Maryland",
   willRelocate: true,
   minHourly: 18,
+  level: "entry",
   targets: ["swe", "backend", "web"],
   usCitizen: true,
   hasClearance: false,

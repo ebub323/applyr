@@ -7,9 +7,9 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Applyr: grade your resume, find the internships you match",
+  title: "Applyr: grade your resume, find the jobs you match",
   description:
-    "Upload your resume to see how it grades, then search live internship and entry-level postings ranked by how well you match. Runs entirely in your browser.",
+    "Upload your resume to see how it grades, then search live postings in any field, from healthcare to software, ranked by how well you match. A small local AI tailors your resume to each job. Runs in your browser.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

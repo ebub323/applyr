@@ -10,7 +10,7 @@ import { EMPTY_KIT, type Profile, type Role } from "./types";
 
 const profile: Profile = {
   skills: ["TypeScript", "Python", "SQL"], wantTitles: [], homeMetro: "Baltimore", willRelocate: true, minHourly: 18,
-  targets: [], usCitizen: true, hasClearance: false, kit: { ...EMPTY_KIT, name: "Alex Rivera", email: "a@x.com", school: "State University", degree: "Bachelor of Science in Computer Science", gradDate: "May 2027", pitch: "Campus Events App: Built a web app used by 120 students" },
+  level: "entry", targets: [], usCitizen: true, hasClearance: false, kit: { ...EMPTY_KIT, name: "Alex Rivera", email: "a@x.com", school: "State University", degree: "Bachelor of Science in Computer Science", gradDate: "May 2027", pitch: "Campus Events App: Built a web app used by 120 students" },
 };
 const role = (o: Partial<Role> = {}): Role => ({ id: "r1", title: "Software Engineer Intern", company: "Acme", location: "Baltimore, MD", remote: false, source: "greenhouse", stage: "found", keywords: ["TypeScript", "Go"], notes: "", ...o });
 

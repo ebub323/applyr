@@ -30,6 +30,7 @@ export type Source =
   | "workday"
   | "handshake"
   | "indeed"
+  | "remotive"
   | "other"
   | "manual";
 
@@ -54,6 +55,8 @@ export interface Role {
   flags?: ("citizenship" | "clearance")[];
   ext?: { slug: string; id: string };
   descriptionLoaded?: boolean;
+  /** The posting text, kept for this session only (not saved) so the AI can tailor to it. */
+  description?: string;
   /** Which curated list or board category it came from, for display. */
   category?: string;
   /** The last day a follow-up was sent, so reminders do not nag. */
@@ -69,7 +72,9 @@ export interface Profile {
   homeMetro: string;
   willRelocate: boolean;
   minHourly: number;
-  /** Role kinds the person is aiming at (ids from resume.ts TARGET_OPTIONS). */
+  /** "entry" drops senior roles; "any" keeps every level. */
+  level: "entry" | "any";
+  /** Role kinds the person is aiming at (ids from fields.ts). */
   targets: string[];
   /** Able to meet a US citizenship requirement. */
   usCitizen: boolean;

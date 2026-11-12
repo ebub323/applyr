@@ -1,3 +1,4 @@
+import { fieldById, type Field } from "./fields";
 import type { Profile, Role, Source, Weights } from "./types";
 
 /**
@@ -25,6 +26,7 @@ export const SOURCE_FRICTION: Record<Source, number> = {
   handshake: 0.2,
   manual: 0.3,
   indeed: 0.35,
+  remotive: 0.25,
   other: 0.5,
   workday: 0.8,
 };
@@ -77,14 +79,20 @@ export function scoreFit(
   // --- Title. The strongest single signal. ---
   const title = role.title.toLowerCase();
   const wantIdx = profile.wantTitles.findIndex((t) => t.trim() && title.includes(t.trim().toLowerCase()));
-  if (SENIOR.test(role.title)) {
+  const picked = profile.targets.map(fieldById).filter((f): f is Field => !!f);
+  const techOnly = picked.length === 0 || picked.every((f) => f.tech);
+  const fieldHit = picked.find((f) => !f.tech && f.match.test(role.title));
+  const entryOnly = (profile.level ?? "entry") === "entry";
+  if (SENIOR.test(role.title) && entryOnly) {
     add("title", "Title", -30, "Seniority above entry level, unlikely to convert");
-  } else if (NON_SWE.test(role.title)) {
+  } else if (techOnly && NON_SWE.test(role.title)) {
     add("title", "Title", -12, "Not a software engineering role");
-  } else if (wantIdx === 0 || (wantIdx < 0 && ENTRY.test(role.title) && ENG.test(role.title))) {
+  } else if (wantIdx === 0 || (techOnly && wantIdx < 0 && ENTRY.test(role.title) && ENG.test(role.title))) {
     add("title", "Title", 22, wantIdx === 0 ? `Matches your top target "${profile.wantTitles[0]}"` : "Entry-level engineering title");
   } else if (wantIdx > 0) {
     add("title", "Title", 14, `Matches your target "${profile.wantTitles[wantIdx]}"`);
+  } else if (fieldHit) {
+    add("title", "Title", ENTRY.test(role.title) && entryOnly ? 20 : 14, `Fits your field: ${fieldHit.label}`);
   }
 
   // --- Skill overlap, capped so a keyword-stuffed posting cannot run away. ---

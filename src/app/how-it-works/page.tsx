@@ -37,7 +37,7 @@ export default function HowItWorks() {
         </Step>
         <Step n={4} title="Search real postings, live">
           Greenhouse, Lever and Ashby publish every company&rsquo;s open roles as public JSON that browsers are allowed to read, so there is
-          no server and no scraping. Applyr pulls the boards you choose, drops senior, advanced-degree and non-software roles, collapses
+          no server and no scraping. Applyr pulls the boards you choose, drops roles outside the fields you picked, plus senior and advanced-degree ones when you ask for entry level, collapses
           one job posted per city into one, and reads the full descriptions of the best candidates.
         </Step>
         <Step n={5} title="Rank by match, with the reason">
@@ -61,7 +61,9 @@ export default function HowItWorks() {
         <Step n={9} title="Tailor and apply without retyping">
           For any role, see which of its technologies are already on your resume, get your skills line reordered to lead with them,
           and copy every form field from an apply kit filled in from your resume. The cover note is built only from your resume
-          and the posting, so it never claims a skill you do not have.
+          and the posting, so it never claims a skill you do not have. A small AI model running on your own computer (Ollama, or inside
+          the browser) can also reword your bullets and write a summary for the role. It sees one bullet at a time, never the employer&rsquo;s
+          name, and every line it writes is checked in code: anything that adds a number, tool or name your resume lacks is thrown away.
         </Step>
         <Step n={10} title="Track to the offer">
           Drag roles across a board from Found to Offer, or use the move menu on a phone, keep notes, and export a CSV or a full

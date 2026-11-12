@@ -10,7 +10,7 @@ const profile: Profile = {
   homeMetro: "Baltimore, DC",
   willRelocate: false,
   minHourly: 18,
-  targets: [],
+  level: "entry", targets: [],
   usCitizen: true,
   hasClearance: false,
   kit: EMPTY_KIT,
