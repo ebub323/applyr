@@ -31,6 +31,8 @@ export type Source =
   | "handshake"
   | "indeed"
   | "remotive"
+  | "smartrecruiters"
+  | "jobicy"
   | "other"
   | "manual";
 

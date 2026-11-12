@@ -2,7 +2,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchBoard, fetchGreenhouseDetails, PRESET_BOARDS, type AtsSource, type Board, type SearchSpec } from "@/lib/ats";
 import { isTechField } from "@/lib/fields";
+import { fetchJobicy, JOBICY_URL } from "@/lib/jobicy";
 import { fetchRemotive, REMOTIVE_URL } from "@/lib/remotive";
+import { fetchSmartRecruiters } from "@/lib/smartrecruiters";
 import { COMMUNITY_REPO, dedupeAcross, fetchCommunity } from "@/lib/community";
 import { isNewSince } from "@/lib/habit";
 import { matchDetail, scoreFit, type FitResult } from "@/lib/score";
@@ -15,7 +17,7 @@ const keyOf = (b: Board) => `${b.source}:${b.slug}`;
 const STRONG = 70;
 const ENRICH_TOP = 30;
 const KEEP_FOR_QUEUE = 200;
-const SOURCE_NAME: Record<string, string> = { remotive: "Remotive", workday: "Workday", greenhouse: "Greenhouse", lever: "Lever", ashby: "Ashby", other: "Company site", indeed: "Indeed", handshake: "Handshake", manual: "Manual" };
+const SOURCE_NAME: Record<string, string> = { remotive: "Remotive", jobicy: "Jobicy", smartrecruiters: "SmartRecruiters", workday: "Workday", greenhouse: "Greenhouse", lever: "Lever", ashby: "Ashby", other: "Company site", indeed: "Indeed", handshake: "Handshake", manual: "Manual" };
 const today = () => new Date().toISOString().slice(0, 10);
 
 /** Runs `worker` over `items` with at most `n` in flight. */
@@ -32,7 +34,7 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
 }) {
   const wantsTech = profile.targets.length === 0 || profile.targets.some(isTechField);
   const wantsOther = profile.targets.some((t) => !isTechField(t));
-  const spec: SearchSpec = useMemo(() => ({ targets: profile.targets, wantTitles: profile.wantTitles, level: profile.level ?? "entry" }), [profile.targets, profile.wantTitles, profile.level]);
+  const spec: SearchSpec = useMemo(() => ({ targets: profile.targets, wantTitles: profile.wantTitles, level: profile.level ?? "entry", city: !profile.willRelocate ? profile.homeMetro.split(",")[0].trim() || undefined : undefined }), [profile.targets, profile.wantTitles, profile.level, profile.willRelocate, profile.homeMetro]);
   const [boards, setBoards] = useState<Board[]>(PRESET_BOARDS);
   // Boards that hire for what you picked start on; a click overrides, and the defaults keep following your profile.
   const [overrides, setOverrides] = useState<Record<string, boolean>>({});
@@ -42,6 +44,8 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
   const community = communityPick ?? wantsTech;
   const setCommunity = (v: boolean) => setCommunityPick(v);
   const [remote, setRemote] = useState(true);
+  const [employers, setEmployers] = useState<boolean | null>(null);
+  const bigEmployers = employers ?? wantsOther;
   const [customSource, setCustomSource] = useState<AtsSource>("greenhouse");
   const [customSlug, setCustomSlug] = useState("");
   const [usOnly, setUsOnly] = useState(true);
@@ -69,18 +73,22 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
     abort.current?.abort();
     const ac = new AbortController(); abort.current = ac;
     const chosen = boards.filter(isOn);
-    if (!chosen.length && !community && !remote) return;
+    if (!chosen.length && !community && !remote && !bigEmployers) return;
     setResults([]); setFailed([]); setOpen(null); setFromSaved(false);
     setPrevious(lastSearchAt);
-    setStatus({ phase: "search", done: 0, total: chosen.length + (community ? 1 : 0) + (remote ? 1 : 0) });
-    let boardRoles: Role[] = []; let communityRoles: Role[] = []; let remoteRoles: Role[] = [];
+    setStatus({ phase: "search", done: 0, total: chosen.length + (community ? 1 : 0) + (remote ? 1 : 0) + (bigEmployers ? 1 : 0) });
+    let boardRoles: Role[] = []; let communityRoles: Role[] = []; let remoteRoles: Role[] = []; let employerRoles: Role[] = [];
     const bad: string[] = [];
-    const publish = () => setResults(dedupeAcross(dedupeAcross(boardRoles, communityRoles), remoteRoles));
+    const publish = () => setResults(dedupeAcross(dedupeAcross(dedupeAcross(boardRoles, communityRoles), remoteRoles), employerRoles));
     const tick = () => { if (!ac.signal.aborted) setStatus((s) => ({ ...s, done: s.done + 1 })); };
 
     const tasks: Promise<void>[] = [];
     if (community) tasks.push(fetchCommunity(usOnly, ac.signal).then((r) => { communityRoles = r; }).catch(() => { if (!ac.signal.aborted) bad.push("Community list"); }).finally(() => { if (!ac.signal.aborted) { publish(); tick(); } }));
-    if (remote) tasks.push(fetchRemotive(usOnly, spec, ac.signal).then((r) => { remoteRoles = r; }).catch(() => { if (!ac.signal.aborted) bad.push("Remotive"); }).finally(() => { if (!ac.signal.aborted) { publish(); tick(); } }));
+    if (bigEmployers) tasks.push(fetchSmartRecruiters(usOnly, spec, ac.signal).then((r) => { employerRoles = r; }).catch(() => { if (!ac.signal.aborted) bad.push("SmartRecruiters"); }).finally(() => { if (!ac.signal.aborted) { publish(); tick(); } }));
+    if (remote) tasks.push(Promise.allSettled([fetchRemotive(usOnly, spec, ac.signal), fetchJobicy(usOnly, spec, ac.signal)]).then(([a, b]) => {
+      remoteRoles = dedupeAcross(a.status === "fulfilled" ? a.value : [], b.status === "fulfilled" ? b.value : []);
+      if (a.status === "rejected" && b.status === "rejected" && !ac.signal.aborted) bad.push("Remote lists");
+    }).finally(() => { if (!ac.signal.aborted) { publish(); tick(); } }));
     tasks.push(pool(chosen, 5, async (b) => {
       try { const got = await fetchBoard(b, usOnly, ac.signal, spec); boardRoles = [...boardRoles, ...got]; }   // read boardRoles after the await: other boards finish meanwhile
       catch { if (!ac.signal.aborted) bad.push(b.label); }
@@ -107,10 +115,10 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
     });
     if (ac.signal.aborted) return;
     setStatus((s) => ({ ...s, phase: "done" }));
-    const merged = dedupeAcross(dedupeAcross(boardRoles, communityRoles), remoteRoles);
+    const merged = dedupeAcross(dedupeAcross(dedupeAcross(boardRoles, communityRoles), remoteRoles), employerRoles);
     const best = merged.map((r) => ({ r, fit: scoreFit(r, profile, weights).fit })).sort((a, b) => b.fit - a.fit).slice(0, KEEP_FOR_QUEUE).map((x) => x.r);
     onSearched(best, today());
-  }, [boards, overrides, wantsTech, wantsOther, community, remote, usOnly, spec, profile, weights, lastSearchAt, onSearched]);
+  }, [boards, overrides, wantsTech, wantsOther, community, remote, bigEmployers, usOnly, spec, profile, weights, lastSearchAt, onSearched]);
 
   // "Find my matches" elsewhere in the app bumps runSignal to start a search.
   const lastSignal = useRef(0);
@@ -166,21 +174,31 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
             <h2 className="text-lg font-semibold">Search live</h2>
             <p className="text-sm text-neutral-500">Reads real postings for the fields you chose straight from public sources. Nothing about you is sent.</p>
           </div>
-          <button className={btn} onClick={() => void run()} disabled={busy || (!boards.some(isOn) && !community && !remote)}>
+          <button className={btn} onClick={() => void run()} disabled={busy || (!boards.some(isOn) && !community && !remote && !bigEmployers)}>
             {busy ? (status.phase === "search" ? `Searching ${status.done}/${status.total}...` : `Reading descriptions ${status.done}/${status.total}...`) : "Search now"}
           </button>
         </div>
         <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl bg-neutral-100 p-3 text-sm dark:bg-neutral-800">
           <input type="checkbox" checked={remote} onChange={(e) => setRemote(e.target.checked)} className="mt-0.5 size-4 accent-neutral-900 dark:accent-white" />
           <span><span className="font-medium">Include remote jobs in every field</span> <span className="text-neutral-500">(support, sales, finance, healthcare, teaching, design and more)</span>
-            <span className="block text-xs text-neutral-500">Remote listings from <a className="underline" href={REMOTIVE_URL} target="_blank" rel="noreferrer">Remotive</a>, linked back to their page.</span></span>
+            <span className="block text-xs text-neutral-500">Remote listings from <a className="underline" href={REMOTIVE_URL} target="_blank" rel="noreferrer">Remotive</a> and <a className="underline" href={JOBICY_URL} target="_blank" rel="noreferrer">Jobicy</a>, linked back to their pages.</span></span>
+        </label>
+        <label className="mt-2 flex cursor-pointer items-start gap-3 rounded-xl bg-neutral-100 p-3 text-sm dark:bg-neutral-800">
+          <input type="checkbox" checked={bigEmployers} onChange={(e) => setEmployers(e.target.checked)} className="mt-0.5 size-4 accent-neutral-900 dark:accent-white" />
+          <span><span className="font-medium">Include large employers on SmartRecruiters</span> <span className="text-neutral-500">(Domino&rsquo;s, McDonald&rsquo;s, Aramark, Sodexo, Equinox, Primark, Bosch and more: store, kitchen, driver, facilities and office roles in thousands of locations)</span></span>
         </label>
         <label className="mt-2 flex cursor-pointer items-start gap-3 rounded-xl bg-neutral-100 p-3 text-sm dark:bg-neutral-800">
           <input type="checkbox" checked={community} onChange={(e) => setCommunity(e.target.checked)} className="mt-0.5 size-4 accent-neutral-900 dark:accent-white" />
           <span><span className="font-medium">Include the community internship list</span> <span className="text-neutral-500">(software and data internships only; about 1,700 roles, including Workday and iCIMS portals the company boards cannot reach)</span>
             <span className="block text-xs text-neutral-500">Maintained by <a className="underline" href={COMMUNITY_REPO} target="_blank" rel="noreferrer">SimplifyJobs and Pitt CSC</a>. Read live from their public repository, never copied.</span></span>
         </label>
-        <div className="mt-4 flex flex-wrap gap-2">
+        <details className="mt-4">
+          <summary className="cursor-pointer text-sm font-medium">Company boards <span className="font-normal text-neutral-500">({boards.filter(isOn).length} of {boards.length} selected)</span></summary>
+          <div className="mt-2 flex gap-2 text-xs">
+            <button className={btnGhost} onClick={() => setOverrides(Object.fromEntries(boards.map((b) => [keyOf(b), true])))}>Select all</button>
+            <button className={btnGhost} onClick={() => setOverrides(Object.fromEntries(boards.map((b) => [keyOf(b), false])))}>Select none</button>
+          </div>
+        <div className="mt-3 flex flex-wrap gap-2">
           {boards.map((b) => {
             const on = isOn(b);
             return (
@@ -191,6 +209,7 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
             );
           })}
         </div>
+        </details>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <select value={customSource} onChange={(e) => setCustomSource(e.target.value as AtsSource)} className={`${input} !w-auto`} aria-label="Board type">
             <option value="greenhouse">Greenhouse</option><option value="lever">Lever</option><option value="ashby">Ashby</option>

@@ -57,7 +57,71 @@ export const PRESET_BOARDS: Board[] = [
   { source: "greenhouse", slug: "duolingo", label: "Duolingo", group: "general" },
   { source: "greenhouse", slug: "coursera", label: "Coursera", group: "general" },
   { source: "greenhouse", slug: "squarespace", label: "Squarespace", group: "general" },
-  { source: "lever", slug: "wealthfront", label: "Wealthfront", group: "general" },
+  { source: "lever", slug: "wealthfront", label: "Wealthfront", group: "general" },  { source: "greenhouse", slug: "airbnb", label: "Airbnb" },
+  { source: "greenhouse", slug: "block", label: "Block" },
+  { source: "greenhouse", slug: "dropbox", label: "Dropbox" },
+  { source: "greenhouse", slug: "elastic", label: "Elastic" },
+  { source: "greenhouse", slug: "mongodb", label: "MongoDB" },
+  { source: "greenhouse", slug: "okta", label: "Okta" },
+  { source: "greenhouse", slug: "newrelic", label: "New Relic" },
+  { source: "greenhouse", slug: "pagerduty", label: "PagerDuty" },
+  { source: "greenhouse", slug: "fastly", label: "Fastly" },
+  { source: "greenhouse", slug: "netlify", label: "Netlify" },
+  { source: "greenhouse", slug: "planetscale", label: "PlanetScale" },
+  { source: "greenhouse", slug: "roku", label: "Roku" },
+  { source: "greenhouse", slug: "twitch", label: "Twitch" },
+  { source: "greenhouse", slug: "roblox", label: "Roblox" },
+  { source: "greenhouse", slug: "riotgames", label: "Riot Games" },
+  { source: "greenhouse", slug: "epicgames", label: "Epic Games" },
+  { source: "greenhouse", slug: "waymo", label: "Waymo" },
+  { source: "greenhouse", slug: "nuro", label: "Nuro" },
+  { source: "greenhouse", slug: "spacex", label: "SpaceX" },
+  { source: "greenhouse", slug: "rocketlab", label: "Rocket Lab" },
+  { source: "ashby", slug: "benchling", label: "Benchling" },
+  { source: "ashby", slug: "amplitude", label: "Amplitude" },
+  { source: "ashby", slug: "snowflake", label: "Snowflake" },
+  { source: "ashby", slug: "sentry", label: "Sentry" },
+  { source: "ashby", slug: "harvey", label: "Harvey" },
+  { source: "ashby", slug: "webflow", label: "Webflow" },
+  { source: "greenhouse", slug: "ginkgobioworks", label: "Ginkgo Bioworks" },
+  { source: "greenhouse", slug: "amwell", label: "Amwell", group: "general" },
+  { source: "greenhouse", slug: "talkspace", label: "Talkspace", group: "general" },
+  { source: "greenhouse", slug: "flatironhealth", label: "Flatiron Health", group: "general" },
+  { source: "greenhouse", slug: "modernhealth", label: "Modern Health", group: "general" },
+  { source: "greenhouse", slug: "oura", label: "Oura", group: "general" },
+  { source: "ashby", slug: "whoop", label: "WHOOP", group: "general" },
+  { source: "lever", slug: "gopuff", label: "Gopuff", group: "general" },
+  { source: "lever", slug: "lyrahealth", label: "Lyra Health", group: "general" },
+  { source: "lever", slug: "ro", label: "Ro", group: "general" },
+  { source: "lever", slug: "olo", label: "Olo", group: "general" },
+  { source: "greenhouse", slug: "toast", label: "Toast", group: "general" },
+  { source: "ashby", slug: "brightwheel", label: "Brightwheel", group: "general" },
+  { source: "ashby", slug: "classdojo", label: "ClassDojo", group: "general" },
+  { source: "ashby", slug: "instructure", label: "Instructure", group: "general" },
+  { source: "ashby", slug: "handshake", label: "Handshake", group: "general" },
+  { source: "greenhouse", slug: "clever", label: "Clever", group: "general" },
+  { source: "ashby", slug: "thumbtack", label: "Thumbtack", group: "general" },
+  { source: "greenhouse", slug: "taskrabbit", label: "TaskRabbit", group: "general" },
+  { source: "ashby", slug: "angi", label: "Angi", group: "general" },
+  { source: "ashby", slug: "poshmark", label: "Poshmark", group: "general" },
+  { source: "ashby", slug: "hopper", label: "Hopper", group: "general" },
+  { source: "ashby", slug: "patreon", label: "Patreon", group: "general" },
+  { source: "ashby", slug: "substack", label: "Substack", group: "general" },
+  { source: "greenhouse", slug: "justworks", label: "Justworks", group: "general" },
+  { source: "greenhouse", slug: "ziprecruiter", label: "ZipRecruiter", group: "general" },
+  { source: "greenhouse", slug: "fanduel", label: "FanDuel", group: "general" },
+  { source: "greenhouse", slug: "gofundme", label: "GoFundMe", group: "general" },
+  { source: "greenhouse", slug: "seatgeek", label: "SeatGeek", group: "general" },
+  { source: "greenhouse", slug: "nextdoor", label: "Nextdoor", group: "general" },
+  { source: "ashby", slug: "strava", label: "Strava", group: "general" },
+  { source: "greenhouse", slug: "bird", label: "Bird", group: "general" },
+  { source: "greenhouse", slug: "betterment", label: "Betterment", group: "general" },
+  { source: "greenhouse", slug: "upstart", label: "Upstart", group: "general" },
+  { source: "greenhouse", slug: "carta", label: "Carta", group: "general" },
+  { source: "greenhouse", slug: "gemini", label: "Gemini", group: "general" },
+  { source: "greenhouse", slug: "faire", label: "Faire", group: "general" },
+  { source: "ashby", slug: "guild", label: "Guild", group: "general" },
+  { source: "ashby", slug: "clearco", label: "Clearco", group: "general" },
 ];
 
 // Word-boundary "intern" only: a bare substring also matches Internal,
@@ -78,7 +142,7 @@ export function locationOk(location: string, usOnly: boolean): boolean {
 }
 
 /** What the person is looking for, as far as filtering a posting's title goes. */
-export interface SearchSpec { targets: string[]; wantTitles: string[]; level: "entry" | "any" }
+export interface SearchSpec { targets: string[]; wantTitles: string[]; level: "entry" | "any"; /** Narrows employer searches to one home city when relocation is off. */ city?: string }
 /** Used when no spec is given: entry-level software, which is what the app started as. */
 export const DEFAULT_SPEC: SearchSpec = { targets: [], wantTitles: [], level: "entry" };
 
@@ -102,7 +166,7 @@ const DESC_MAX = 6000;
 const clip = (t?: string) => (t ? t.slice(0, DESC_MAX) : undefined);
 const isRemote = (loc: string) => /remote/i.test(loc);
 
-async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+export async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
   const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`${res.status}`);
   return (await res.json()) as T;
@@ -191,6 +255,11 @@ export async function loadDescription(role: Pick<Role, "description" | "ext" | "
       const j = await getJson<LeverJob & { lists?: { text: string; content: string }[]; additionalPlain?: string }>(`https://api.lever.co/v0/postings/${lever[1]}/${lever[2]}`, signal);
       const lists = (j.lists ?? []).map((l) => `${l.text}: ${htmlToText(l.content)}`).join("\n");
       return clip([j.descriptionPlain, lists, j.additionalPlain].filter(Boolean).join("\n")) ?? "";
+    }
+    const sr = url.match(/jobs\.smartrecruiters\.com\/([\w-]+)\/(\d+)/);
+    if (sr) {
+      const j = await getJson<{ jobAd?: { sections?: Record<string, { text?: string }> } }>(`https://api.smartrecruiters.com/v1/companies/${sr[1]}/postings/${sr[2]}`, signal);
+      return clip(htmlToText(Object.values(j.jobAd?.sections ?? {}).map((x) => x.text ?? "").join(" "))) ?? "";
     }
     const ashby = url.match(/jobs\.ashbyhq\.com\/([\w.-]+)\/([0-9a-f-]{36})/);
     if (ashby) {

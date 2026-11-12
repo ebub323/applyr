@@ -186,3 +186,23 @@ describe("tailoring stays inside what your resume says", () => {
     expect(got.length).toBe(res.rewrites.length);
   });
 });
+
+import { mapPosting, searchTerms } from "./smartrecruiters";
+import { parseJobicy } from "./jobicy";
+
+describe("more sources", () => {
+  it("turns your fields into search words for large employers", () => {
+    expect(searchTerms(spec(["hospitality"], "entry", ["sommelier"]))).toEqual(["sommelier", "retail associate", "server"]);
+  });
+  it("maps a SmartRecruiters posting to its public apply page", () => {
+    const r = mapPosting({ id: "123", name: "Delivery Driver", releasedDate: "2026-11-01T00:00:00Z", location: { city: "Towson", region: "md", country: "us" } }, "Dominos", "Domino's");
+    expect(r).toMatchObject({ title: "Delivery Driver", company: "Domino's", location: "Towson, MD", url: "https://jobs.smartrecruiters.com/Dominos/123", source: "smartrecruiters" });
+  });
+  it("reads Jobicy remote jobs for your field", () => {
+    const raw = { jobs: [
+      { id: 1, url: "https://jobicy.com/jobs/1", jobTitle: "Customer Support Agent", companyName: "Acme", jobGeo: "USA", jobDescription: "<p>Zendesk</p>" },
+      { id: 2, url: "https://jobicy.com/jobs/2", jobTitle: "Customer Support Agent", companyName: "Acme", jobGeo: "Europe", jobDescription: "" },
+    ] };
+    expect(parseJobicy(raw, true, spec(["customer"])).map((r) => r.id)).toEqual(["jobicy:1"]);
+  });
+});

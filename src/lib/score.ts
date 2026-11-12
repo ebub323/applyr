@@ -27,6 +27,8 @@ export const SOURCE_FRICTION: Record<Source, number> = {
   manual: 0.3,
   indeed: 0.35,
   remotive: 0.25,
+  jobicy: 0.25,
+  smartrecruiters: 0.3,
   other: 0.5,
   workday: 0.8,
 };
