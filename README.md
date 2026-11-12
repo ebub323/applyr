@@ -1,6 +1,6 @@
 # Applyr
 
-**Live:** https://applyr.unv.run · **How it works:** https://applyr.unv.run/how-it-works/
+**Live:** https://applyr.techboy.dev · **How it works:** https://applyr.techboy.dev/how-it-works/
 
 Ranks, tracks and files job applications. Built because applying to 50 roles a
 day is a data problem, not a willpower problem.
