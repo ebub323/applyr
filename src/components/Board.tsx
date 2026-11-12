@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { STAGES, type Role, type Stage } from "@/lib/types";
 
-const STAGE_TONE: Record<string, string> = { found: "border-t-slate-400", account_ready: "border-t-sky-400", applied: "border-t-violet-500", recruiter_reply: "border-t-fuchsia-500", interview: "border-t-orange-400", offer: "border-t-emerald-500", closed: "border-t-rose-400" };
+const STAGE_TONE: Record<string, string> = { found: "border-t-slate-400", account_ready: "border-t-sky-400", applied: "border-t-slate-500", recruiter_reply: "border-t-blue-500", interview: "border-t-orange-400", offer: "border-t-emerald-500", closed: "border-t-rose-400" };
 import type { FitResult } from "@/lib/score";
 import { FitPill } from "./ui";
 
@@ -20,14 +20,14 @@ export default function Board({ roles, dueIds, onMove, onSelect }: { roles: Scor
             onDragOver={(e) => { e.preventDefault(); setOver(s.id); }}
             onDragLeave={() => setOver((o) => (o === s.id ? null : o))}
             onDrop={(e) => { e.preventDefault(); setOver(null); const id = e.dataTransfer.getData("text/plain"); if (id) onMove(id, s.id); }}
-            className={`w-60 shrink-0 rounded-2xl border border-t-4 p-2.5 transition-all ${STAGE_TONE[s.id]} ${over === s.id ? "scale-[1.02] border-fuchsia-400 bg-fuchsia-50 shadow-xl shadow-fuchsia-500/20 dark:bg-fuchsia-500/10" : "border-violet-100 bg-white/50 dark:border-violet-500/20 dark:bg-[#1a1433]/50"}`}
+            className={`w-60 shrink-0 rounded-2xl border border-t-4 p-2.5 transition-all ${STAGE_TONE[s.id]} ${over === s.id ? "scale-[1.02] border-blue-400 bg-blue-50 shadow-xl dark:bg-blue-500/10" : "border-slate-100 bg-white/50 dark:border-slate-500/20 dark:bg-[#16181d]/50"}`}
           >
-            <div className="mb-2 flex items-center justify-between px-1 text-xs font-bold uppercase tracking-wide text-violet-500">
+            <div className="mb-2 flex items-center justify-between px-1 text-xs font-bold uppercase tracking-wide text-slate-500">
               {s.label}<span className="font-mono">{col.length}</span>
             </div>
             <div className="space-y-2">
               {col.map((r) => (
-                <div key={r.id} className="lift anim-pop rounded-xl border border-violet-100 bg-white shadow-sm dark:border-violet-500/20 dark:bg-[#140f2b]">
+                <div key={r.id} className="lift anim-pop rounded-xl border border-slate-100 bg-white shadow-sm dark:border-slate-500/20 dark:bg-[#101216]">
                   <button
                     draggable
                     onDragStart={(e) => { e.dataTransfer.setData("text/plain", r.id); e.dataTransfer.effectAllowed = "move"; }}

@@ -100,7 +100,7 @@ export default function AiTailor({ role, profile, resumeText }: { role: Role; pr
     <div className={`${card} space-y-3 p-4`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h4 className="grad-text text-base font-extrabold">✨ Suggest changes with a local AI</h4>
+          <h4 className="text-base font-extrabold">Suggest changes with a local AI</h4>
           <p className="text-xs text-neutral-500">A small model on your own computer rewords your bullets for this job. Your resume never leaves it.</p>
         </div>
         {busy
@@ -152,7 +152,7 @@ export default function AiTailor({ role, profile, resumeText }: { role: Role; pr
           {shown.summary && (
             <div>
               <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-500"><input type="checkbox" checked={useSummary} onChange={(e) => setUseSummary(e.target.checked)} className="accent-fuchsia-500" /> Summary for this job</label>
+                <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-500"><input type="checkbox" checked={useSummary} onChange={(e) => setUseSummary(e.target.checked)} className="accent-blue-600" /> Summary for this job</label>
                 <CopyButton text={shown.summary} />
               </div>
               <p className="mt-1.5 rounded-lg bg-emerald-500/10 p-2.5 text-sm leading-relaxed">{shown.summary}</p>
@@ -163,7 +163,7 @@ export default function AiTailor({ role, profile, resumeText }: { role: Role; pr
               {shown.rewrites.map((r) => (
                 <li key={r.n} className="rounded-lg border border-neutral-200 p-2.5 text-sm dark:border-neutral-800">
                   <label className="flex items-start gap-2">
-                    <input type="checkbox" className="mt-1 accent-fuchsia-500" checked={!skip.has(r.n)} onChange={() => setSkip((s) => { const n = new Set(s); if (n.has(r.n)) n.delete(r.n); else n.add(r.n); return n; })} />
+                    <input type="checkbox" className="mt-1 accent-blue-600" checked={!skip.has(r.n)} onChange={() => setSkip((s) => { const n = new Set(s); if (n.has(r.n)) n.delete(r.n); else n.add(r.n); return n; })} />
                     <span className="min-w-0 flex-1">
                       <span className="block text-xs text-neutral-400 line-through decoration-neutral-300">{r.original}</span>
                       <span className="mt-0.5 block leading-snug">{r.text}</span>

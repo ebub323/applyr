@@ -6,10 +6,10 @@ import type { Profile } from "@/lib/types";
 import { btn, btnGhost, card, input, tagTone } from "./ui";
 
 const GROUPS: { id: Check["group"]; label: string; blurb: string; bar: string }[] = [
-  { id: "ats", label: "ATS readiness", blurb: "Can software read it?", bar: "from-sky-500 to-cyan-400" },
-  { id: "impact", label: "Impact", blurb: "Do bullets show results?", bar: "from-fuchsia-500 to-pink-400" },
-  { id: "technical", label: "Skills and depth", blurb: "Does it prove skill?", bar: "from-violet-500 to-indigo-400" },
-  { id: "completeness", label: "Completeness", blurb: "Is anything missing?", bar: "from-amber-500 to-orange-400" },
+  { id: "ats", label: "ATS readiness", blurb: "Can software read it?", bar: "bg-sky-500" },
+  { id: "impact", label: "Impact", blurb: "Do bullets show results?", bar: "bg-emerald-500" },
+  { id: "technical", label: "Skills and depth", blurb: "Does it prove skill?", bar: "bg-blue-600" },
+  { id: "completeness", label: "Completeness", blurb: "Is anything missing?", bar: "bg-amber-500" },
 ];
 
 function Ring({ value }: { value: number }) {
@@ -25,11 +25,11 @@ function Ring({ value }: { value: number }) {
   return (
     <svg width="148" height="148" viewBox="0 0 132 132" role="img" aria-label={`Resume score ${value} out of 100`} className="drop-shadow-lg">
       <defs><linearGradient id="ring" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor={c1} /><stop offset="1" stopColor={c2} /></linearGradient></defs>
-      <circle cx="66" cy="66" r={r} fill="none" strokeWidth="11" className="stroke-violet-100 dark:stroke-violet-500/20" />
+      <circle cx="66" cy="66" r={r} fill="none" strokeWidth="11" className="stroke-slate-100 dark:stroke-slate-500/20" />
       <circle cx="66" cy="66" r={r} fill="none" strokeWidth="11" strokeLinecap="round" stroke="url(#ring)"
         strokeDasharray={c} strokeDashoffset={c * (1 - shown / 100)} transform="rotate(-90 66 66)" />
       <text x="66" y="70" textAnchor="middle" className="fill-current text-[34px] font-bold">{shown}</text>
-      <text x="66" y="88" textAnchor="middle" className="fill-violet-400 text-[10px] font-medium">out of 100</text>
+      <text x="66" y="88" textAnchor="middle" className="fill-slate-400 text-[10px] font-medium">out of 100</text>
     </svg>
   );
 }
@@ -62,10 +62,8 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
   if (a.empty) {
     return (
       <div className="relative mx-auto max-w-2xl text-center">
-        <span aria-hidden className="anim-float absolute -left-10 top-2 text-4xl">✨</span>
-        <span aria-hidden className="anim-float absolute -right-8 top-16 text-3xl [animation-delay:1.2s]">🚀</span>
-        <h1 className="anim-up text-4xl font-extrabold tracking-tight sm:text-5xl">Know where you stand <span className="grad-text">before you apply.</span></h1>
-        <p className="anim-up mt-4 text-lg text-violet-950/70 [animation-delay:80ms] dark:text-violet-100/70">
+        <h1 className="anim-up text-4xl font-extrabold tracking-tight sm:text-5xl">Know where you stand <span className="text-blue-600 dark:text-blue-400">before you apply.</span></h1>
+        <p className="anim-up mt-4 text-lg text-slate-950/70 [animation-delay:80ms] dark:text-slate-100/70">
           Drop in your resume. Applyr grades it the way an applicant tracking system and a recruiter would, works out what kind of job you are after,
           then finds live openings in any field, ranked by how well you match. A small AI on your own computer tailors your resume to each one.
         </p>
@@ -73,11 +71,11 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
           onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
           onDragLeave={() => setDrag(false)}
           onDrop={(e) => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) void load(f); }}
-          className={`${card} anim-up mt-8 border-2 border-dashed p-10 text-center transition-all [animation-delay:160ms] ${drag ? "scale-[1.03] border-fuchsia-500 bg-fuchsia-50 shadow-2xl shadow-fuchsia-500/30" : "border-violet-300 hover:border-fuchsia-400 hover:shadow-xl"}`}
+          className={`${card} anim-up mt-8 border-2 border-dashed p-10 text-center transition-all [animation-delay:160ms] ${drag ? "scale-[1.03] border-blue-500 bg-blue-50 shadow-2xl" : "border-slate-300 hover:border-blue-400 hover:shadow-xl"}`}
         >
-          <div aria-hidden className={`text-5xl ${drag ? "anim-wiggle" : "anim-float"}`}>{busy ? "⏳" : "📄"}</div>
+          <svg aria-hidden viewBox="0 0 24 24" className={`mx-auto size-10 text-slate-400 ${drag ? "text-blue-600" : ""}`} fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 16V4m0 0 4 4m-4-4L8 8M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" strokeLinecap="round" strokeLinejoin="round" /></svg>
           <p className="mt-2 text-xl font-bold">{busy ? "Reading your resume..." : drag ? "Let go to upload!" : "Drop your resume here"}</p>
-          <p className="mt-1 text-sm text-violet-950/60 dark:text-violet-100/60">PDF, DOCX or TXT. It is read in your browser and never uploaded.</p>
+          <p className="mt-1 text-sm text-slate-950/60 dark:text-slate-100/60">PDF, DOCX or TXT. It is read in your browser and never uploaded.</p>
           <div className="mt-5 flex justify-center gap-3">
             <button className={btn} disabled={busy} onClick={() => fileRef.current?.click()}>Choose a file</button>
             <button className={btnGhost} disabled={busy} onClick={() => onResume(SAMPLE_RESUME, "Sample resume")}>Try a sample</button>
@@ -103,7 +101,7 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
         <Ring value={a.overall} />
         <div className="min-w-64 flex-1">
           <div className="flex items-baseline gap-3">
-            <span className="grad-text text-5xl font-extrabold">{a.grade}</span>
+            <span className="text-5xl font-extrabold">{a.grade}</span>
             <span className="text-lg text-neutral-600 dark:text-neutral-400">{a.level}</span>
           </div>
           <p className="mt-1 text-sm text-neutral-500">
@@ -116,7 +114,7 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
               return (
                 <div key={g.id}>
                   <div className="flex justify-between text-xs"><span className="font-medium">{g.label}</span><span className="font-mono text-neutral-500">{pct}</span></div>
-                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-violet-100 dark:bg-violet-500/20"><div className={`h-full rounded-full bg-gradient-to-r transition-all duration-700 ${g.bar}`} style={{ width: `${pct}%` }} /></div>
+                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-500/20"><div className={`h-full rounded-full transition-all duration-700 ${g.bar}`} style={{ width: `${pct}%` }} /></div>
                   <div className="mt-0.5 text-[11px] text-neutral-400">{g.blurb}</div>
                 </div>
               );
@@ -139,25 +137,25 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
 
       <div className="grid gap-6 lg:grid-cols-5">
         <section className={`${card} p-5 lg:col-span-3`}>
-          <h2 className="text-sm font-bold uppercase tracking-wide text-violet-500">Fix these first</h2>
+          <h2 className="text-sm font-bold uppercase tracking-wide text-slate-500">Fix these first</h2>
           {a.fixes.length ? (
             <ol className="mt-3 space-y-2.5">
               {a.fixes.map((f, i) => (
-                <li key={f} className="flex gap-3 text-sm"><span className="grid size-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-500 text-[11px] font-bold text-white shadow">{i + 1}</span>{f}</li>
+                <li key={f} className="flex gap-3 text-sm"><span className="grid size-6 shrink-0 place-items-center rounded-full bg-blue-600 text-[11px] font-bold text-white shadow">{i + 1}</span>{f}</li>
               ))}
             </ol>
           ) : <p className="mt-3 text-sm text-emerald-600">Nothing urgent. Your resume passes every check.</p>}
 
           <div className="mb-2 mt-7 flex items-center justify-between">
-            <h2 className="text-sm font-bold uppercase tracking-wide text-violet-500">Your bullets, one by one</h2>
-            <label className="flex items-center gap-2 text-xs text-neutral-500"><input type="checkbox" checked={onlyWeak} onChange={(e) => setOnlyWeak(e.target.checked)} className="accent-fuchsia-500" /> Only ones that need work</label>
+            <h2 className="text-sm font-bold uppercase tracking-wide text-slate-500">Your bullets, one by one</h2>
+            <label className="flex items-center gap-2 text-xs text-neutral-500"><input type="checkbox" checked={onlyWeak} onChange={(e) => setOnlyWeak(e.target.checked)} className="accent-blue-600" /> Only ones that need work</label>
           </div>
           {a.bulletReview.length === 0 ? <p className="text-sm text-neutral-400">No bullets detected.</p> : (
             <>
               <p className="mb-3 text-xs text-neutral-500">{a.bulletReview.filter((b) => b.hard).length} of {a.bulletReview.length} bullets need work{a.bulletReview.filter((b) => !b.hard && !b.ok).length > 0 ? `, and ${a.bulletReview.filter((b) => !b.hard && !b.ok).length} more would be stronger with a number` : ""}. Apply a fix and the grade updates.</p>
               <ul className="space-y-2.5">
                 {a.bulletReview.filter((b) => !onlyWeak || b.hard).map((b) => (
-                  <li key={b.text} className="lift rounded-xl border border-violet-100 bg-white/60 p-3 text-sm dark:border-violet-500/20 dark:bg-transparent">
+                  <li key={b.text} className="lift rounded-xl border border-slate-100 bg-white/60 p-3 text-sm dark:border-slate-500/20 dark:bg-transparent">
                     <div className="flex items-start gap-2">
                       <span className={`mt-1 size-2 shrink-0 rounded-full ${b.ok ? "bg-emerald-500" : "bg-amber-500"}`} />
                       <p className="flex-1 leading-snug">{b.text}</p>
@@ -180,7 +178,7 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
             </>
           )}
 
-          <h2 className="mb-2 mt-7 text-sm font-bold uppercase tracking-wide text-violet-500">Every check</h2>
+          <h2 className="mb-2 mt-7 text-sm font-bold uppercase tracking-wide text-slate-500">Every check</h2>
           <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">
             {a.checks.map((c) => {
               const ok = c.earned >= c.max * 0.999;
@@ -198,7 +196,7 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
 
         <div className="space-y-6 lg:col-span-2">
           <section className={`${card} p-5`}>
-            <h2 className="text-sm font-bold uppercase tracking-wide text-violet-500">Skills I found</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wide text-slate-500">Skills I found</h2>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {a.skills.map((s) => <span key={s} className={`anim-pop rounded-full px-2.5 py-0.5 text-xs font-medium ${tagTone(s)}`}>{s}</span>)}
             </div>
@@ -208,12 +206,12 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
           </section>
 
           <section className={`${card} p-5`}>
-            <h2 className="text-sm font-bold uppercase tracking-wide text-violet-500">Roles your resume points at</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wide text-slate-500">Roles your resume points at</h2>
             <ul className="mt-3 space-y-2.5">
               {a.targets.map((t) => (
                 <li key={t.id}>
                   <div className="flex justify-between text-sm"><span>{t.label}</span><span className="font-mono text-xs text-neutral-500">{Math.round(t.strength * 100)}%</span></div>
-                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-violet-100 dark:bg-violet-500/20"><div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-400 transition-all duration-700" style={{ width: `${t.strength * 100}%` }} /></div>
+                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-500/20"><div className="h-full rounded-full bg-emerald-400 transition-all duration-700" style={{ width: `${t.strength * 100}%` }} /></div>
                 </li>
               ))}
               {!a.targets.length && <li className="text-sm text-neutral-400">Add more skills and tools to see a clear direction.</li>}
@@ -222,7 +220,7 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
           </section>
 
           <section className={`${card} p-5 text-sm`}>
-            <h2 className="text-sm font-bold uppercase tracking-wide text-violet-500">Contact check</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wide text-slate-500">Contact check</h2>
             <ul className="mt-3 space-y-1.5">
               {([["Email", a.email], ["Phone", a.phone], ["LinkedIn", a.linkedin], ["GitHub", a.github]] as const).map(([k, v]) => (
                 <li key={k} className="flex justify-between gap-3"><span className="text-neutral-500">{k}</span><span className={v ? "truncate" : "text-red-600"}>{v ?? "Missing"}</span></li>
