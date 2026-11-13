@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Inter } from "next/font/google";
+import { Geist_Mono, Inter, Newsreader } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
+const newsreader = Newsreader({ variable: "--font-newsreader", subsets: ["latin"], style: ["normal", "italic"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -14,25 +15,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${inter.variable} ${geistMono.variable} dark h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-[#010102] text-[#f7f8f8]">
-        <header className="sticky top-0 z-30 border-b border-[#23252a] bg-[#010102]/80 backdrop-blur-md">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
-            <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
-              <span className="anim-wiggle grid size-8 place-items-center rounded-lg bg-[#5e6ad2] text-sm font-semibold text-white">
-                A
-              </span>
-              <span className="text-[15px] font-semibold">Applyr</span>
+    <html lang="en" className={`${inter.variable} ${newsreader.variable} ${geistMono.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col bg-[#f7f7fb] text-[#1f1d33]">
+        <header className="border-b border-[#e1e0ec] bg-[#f7f7fb]">
+          <div className="mx-auto flex max-w-6xl items-end justify-between px-6 pb-4 pt-6">
+            <Link href="/" className="flex items-baseline gap-3">
+              <span className="font-serif text-[28px] font-medium leading-none tracking-tight">Applyr</span>
+              <span className="hidden text-[11px] font-medium uppercase tracking-[0.14em] text-[#70707d] sm:inline">Resume review and job matching</span>
             </Link>
-            <nav className="flex items-center gap-5 text-sm font-medium text-slate-900/70 dark:text-slate-200/70">
-              <Link href="/" className="hover:text-blue-600 dark:hover:text-blue-300">Board</Link>
-              <Link href="/how-it-works" className="hover:text-blue-600 dark:hover:text-blue-300">How it works</Link>
-              <a
-                href="https://github.com/ebub323"
-                className="hover:text-blue-600 dark:hover:text-blue-300"
-              >
-                GitHub
-              </a>
+            <nav className="flex items-center gap-6 text-[13px] font-medium text-[#554e7b]">
+              <Link href="/" className="hover:text-[#1f1d33]">Workspace</Link>
+              <Link href="/how-it-works" className="hover:text-[#1f1d33]">Method</Link>
+              <a href="https://github.com/ebub323" className="hover:text-[#1f1d33]">GitHub</a>
             </nav>
           </div>
         </header>

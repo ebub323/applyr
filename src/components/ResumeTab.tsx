@@ -6,10 +6,10 @@ import type { Profile } from "@/lib/types";
 import { btn, btnGhost, card, input, tagTone } from "./ui";
 
 const GROUPS: { id: Check["group"]; label: string; blurb: string; bar: string }[] = [
-  { id: "ats", label: "ATS readiness", blurb: "Can software read it?", bar: "bg-sky-500" },
-  { id: "impact", label: "Impact", blurb: "Do bullets show results?", bar: "bg-emerald-500" },
-  { id: "technical", label: "Skills and depth", blurb: "Does it prove skill?", bar: "bg-blue-600" },
-  { id: "completeness", label: "Completeness", blurb: "Is anything missing?", bar: "bg-amber-500" },
+  { id: "ats", label: "ATS readiness", blurb: "Can software read it?", bar: "bg-[#5266eb]" },
+  { id: "impact", label: "Impact", blurb: "Do bullets show results?", bar: "bg-[#5266eb]" },
+  { id: "technical", label: "Skills and depth", blurb: "Does it prove skill?", bar: "bg-[#5266eb]" },
+  { id: "completeness", label: "Completeness", blurb: "Is anything missing?", bar: "bg-[#5266eb]" },
 ];
 
 function Ring({ value }: { value: number }) {
@@ -23,7 +23,7 @@ function Ring({ value }: { value: number }) {
   }, [value]);
   const [c1, c2] = value >= 80 ? ["#10b981", "#2dd4bf"] : value >= 60 ? ["#f59e0b", "#fb923c"] : ["#ef4444", "#d946ef"];
   return (
-    <svg width="148" height="148" viewBox="0 0 132 132" role="img" aria-label={`Resume score ${value} out of 100`} className="drop-shadow-lg">
+    <svg width="148" height="148" viewBox="0 0 132 132" role="img" aria-label={`Resume score ${value} out of 100`} >
       <defs><linearGradient id="ring" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor={c1} /><stop offset="1" stopColor={c2} /></linearGradient></defs>
       <circle cx="66" cy="66" r={r} fill="none" strokeWidth="11" className="stroke-slate-100 dark:stroke-slate-500/20" />
       <circle cx="66" cy="66" r={r} fill="none" strokeWidth="11" strokeLinecap="round" stroke="url(#ring)"
@@ -61,33 +61,47 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
 
   if (a.empty) {
     return (
-      <div className="relative mx-auto max-w-2xl text-center">
-        <h1 className="anim-up text-4xl font-extrabold tracking-tight sm:text-5xl">Know where you stand <span className="text-blue-600 dark:text-blue-400">before you apply.</span></h1>
-        <p className="anim-up mt-4 text-lg text-slate-950/70 [animation-delay:80ms] dark:text-slate-100/70">
-          Drop in your resume. Applyr grades it the way an applicant tracking system and a recruiter would, works out what kind of job you are after,
-          then finds live openings in any field, ranked by how well you match. A small AI on your own computer tailors your resume to each one.
-        </p>
-        <div
-          onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
-          onDragLeave={() => setDrag(false)}
-          onDrop={(e) => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) void load(f); }}
-          className={`${card} anim-up mt-8 border-2 border-dashed p-10 text-center transition-all [animation-delay:160ms] ${drag ? "scale-[1.03] border-blue-500 bg-blue-50 shadow-2xl" : "border-slate-300 hover:border-blue-400 hover:shadow-xl"}`}
-        >
-          <svg aria-hidden viewBox="0 0 24 24" className={`mx-auto size-10 text-slate-400 ${drag ? "text-blue-600" : ""}`} fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 16V4m0 0 4 4m-4-4L8 8M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          <p className="mt-2 text-xl font-bold">{busy ? "Reading your resume..." : drag ? "Let go to upload!" : "Drop your resume here"}</p>
-          <p className="mt-1 text-sm text-slate-950/60 dark:text-slate-100/60">PDF, DOCX or TXT. It is read in your browser and never uploaded.</p>
-          <div className="mt-5 flex justify-center gap-3">
-            <button className={btn} disabled={busy} onClick={() => fileRef.current?.click()}>Choose a file</button>
-            <button className={btnGhost} disabled={busy} onClick={() => onResume(SAMPLE_RESUME, "Sample resume")}>Try a sample</button>
-          </div>
-          <input ref={fileRef} type="file" accept=".pdf,.docx,.txt,.md" className="hidden" data-testid="resume-file"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) void load(f); }} />
-          {err && <p className="mt-4 text-sm text-red-600">{err}</p>}
+      <div className="grid items-start gap-12 pt-6 lg:grid-cols-[1.1fr_1fr]">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#5266eb]">Resume review</p>
+          <h1 className="mt-4 text-[44px] leading-[1.08] sm:text-[56px]">Your resume, read the way a recruiter reads it.</h1>
+          <p className="mt-6 max-w-xl text-[17px] leading-7 text-[#554e7b]">
+            Applyr grades your resume, works out the kind of work it points to, and ranks live openings against it. It reads nursing, finance,
+            retail, trades and teaching resumes as readily as engineering ones. A small model on your own machine tailors it to each posting.
+          </p>
+          <dl className="mt-10 grid max-w-xl gap-px overflow-hidden rounded-xl border border-[#e1e0ec] bg-[#e1e0ec] sm:grid-cols-3">
+            {[["01", "Grade", "Fifteen transparent checks, each one explained."], ["02", "Place", "Your field comes from your titles, degree and skills."], ["03", "Match", "Live postings, scored with the reasons shown."]].map(([n, t, d]) => (
+              <div key={n} className="bg-white p-4">
+                <dt className="flex items-baseline gap-2 text-sm font-medium"><span className="font-mono text-[11px] text-[#9896ad]">{n}</span>{t}</dt>
+                <dd className="mt-1.5 text-[13px] leading-5 text-[#70707d]">{d}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
-        <details className="mt-4">
+
+        <div>
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+            onDragLeave={() => setDrag(false)}
+            onDrop={(e) => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) void load(f); }}
+            className={`rounded-2xl border bg-white p-8 transition-colors ${drag ? "border-[#5266eb] bg-[#f2f3fe]" : "border-[#d6d5e3]"}`}
+          >
+            <svg aria-hidden viewBox="0 0 24 24" className="size-6 text-[#5266eb]" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <h2 className="mt-4 text-2xl">{busy ? "Reading your resume" : drag ? "Release to read it" : "Add your resume"}</h2>
+            <p className="mt-1.5 text-sm text-[#70707d]">PDF, DOCX or plain text. It is read in your browser and never uploaded.</p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button className={btn} disabled={busy} onClick={() => fileRef.current?.click()}>Choose a file</button>
+              <button className={btnGhost} disabled={busy} onClick={() => onResume(SAMPLE_RESUME, "Sample resume")}>Use a sample</button>
+            </div>
+            <input ref={fileRef} type="file" accept=".pdf,.docx,.txt,.md" className="hidden" data-testid="resume-file"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) void load(f); }} />
+            {err && <p className="mt-4 text-sm text-red-700">{err}</p>}
+          </div>
+          <details className="mt-4 px-1">
           <summary className="cursor-pointer text-sm text-neutral-500">Or paste your resume text</summary>
           <textarea rows={10} className={`${input} mt-2`} placeholder="Paste your resume here..." onChange={(e) => e.target.value.trim().split(/\s+/).length >= 25 && onResume(e.target.value, "Pasted text")} />
         </details>
+        </div>
       </div>
     );
   }
@@ -97,11 +111,11 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
 
   return (
     <div className="space-y-6">
-      <div className={`${card} anim-up flex flex-wrap items-center gap-6 p-6`}>
+      <div className={`${card} flex flex-wrap items-center gap-8 p-7`}>
         <Ring value={a.overall} />
         <div className="min-w-64 flex-1">
           <div className="flex items-baseline gap-3">
-            <span className="text-5xl font-extrabold">{a.grade}</span>
+            <span className="font-serif text-6xl font-medium leading-none">{a.grade}</span>
             <span className="text-lg text-neutral-600 dark:text-neutral-400">{a.level}</span>
           </div>
           <p className="mt-1 text-sm text-neutral-500">
@@ -137,17 +151,17 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
 
       <div className="grid gap-6 lg:grid-cols-5">
         <section className={`${card} p-5 lg:col-span-3`}>
-          <h2 className="text-sm font-bold uppercase tracking-wide text-slate-500">Fix these first</h2>
+          <h2 className="uppercase text-slate-500">Fix these first</h2>
           {a.fixes.length ? (
             <ol className="mt-3 space-y-2.5">
               {a.fixes.map((f, i) => (
-                <li key={f} className="flex gap-3 text-sm"><span className="grid size-6 shrink-0 place-items-center rounded-full bg-blue-600 text-[11px] font-bold text-white shadow">{i + 1}</span>{f}</li>
+                <li key={f} className="flex gap-3 text-sm"><span className="grid size-6 shrink-0 place-items-center rounded-full border border-[#cfd4f8] bg-[#f2f3fe] font-mono text-[11px] text-[#36439f]">{i + 1}</span>{f}</li>
               ))}
             </ol>
           ) : <p className="mt-3 text-sm text-emerald-600">Nothing urgent. Your resume passes every check.</p>}
 
           <div className="mb-2 mt-7 flex items-center justify-between">
-            <h2 className="text-sm font-bold uppercase tracking-wide text-slate-500">Your bullets, one by one</h2>
+            <h2 className="uppercase text-slate-500">Your bullets, one by one</h2>
             <label className="flex items-center gap-2 text-xs text-neutral-500"><input type="checkbox" checked={onlyWeak} onChange={(e) => setOnlyWeak(e.target.checked)} className="accent-blue-600" /> Only ones that need work</label>
           </div>
           {a.bulletReview.length === 0 ? <p className="text-sm text-neutral-400">No bullets detected.</p> : (
@@ -196,7 +210,7 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
 
         <div className="space-y-6 lg:col-span-2">
           <section className={`${card} p-5`}>
-            <h2 className="text-sm font-bold uppercase tracking-wide text-slate-500">Skills I found</h2>
+            <h2 className="uppercase text-slate-500">Skills I found</h2>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {a.skills.map((s) => <span key={s} className={`anim-pop rounded-full px-2.5 py-0.5 text-xs font-medium ${tagTone(s)}`}>{s}</span>)}
             </div>
@@ -206,7 +220,7 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
           </section>
 
           <section className={`${card} p-5`}>
-            <h2 className="text-sm font-bold uppercase tracking-wide text-slate-500">Roles your resume points at</h2>
+            <h2 className="uppercase text-slate-500">Roles your resume points at</h2>
             <ul className="mt-3 space-y-2.5">
               {a.targets.map((t) => (
                 <li key={t.id}>
@@ -220,7 +234,7 @@ export default function ResumeTab({ resume, resumeName, profile, onResume, onUse
           </section>
 
           <section className={`${card} p-5 text-sm`}>
-            <h2 className="text-sm font-bold uppercase tracking-wide text-slate-500">Contact check</h2>
+            <h2 className="uppercase text-slate-500">Contact check</h2>
             <ul className="mt-3 space-y-1.5">
               {([["Email", a.email], ["Phone", a.phone], ["LinkedIn", a.linkedin], ["GitHub", a.github]] as const).map(([k, v]) => (
                 <li key={k} className="flex justify-between gap-3"><span className="text-neutral-500">{k}</span><span className={v ? "truncate" : "text-red-600"}>{v ?? "Missing"}</span></li>

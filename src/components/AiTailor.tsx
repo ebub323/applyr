@@ -100,7 +100,7 @@ export default function AiTailor({ role, profile, resumeText }: { role: Role; pr
     <div className={`${card} space-y-3 p-4`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h4 className="text-base font-extrabold">Suggest changes with a local AI</h4>
+          <h4 className="text-base font-semibold">Suggest changes with a local AI</h4>
           <p className="text-xs text-neutral-500">A small model on your own computer rewords your bullets for this job. Your resume never leaves it.</p>
         </div>
         {busy

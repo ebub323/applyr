@@ -48,7 +48,7 @@ export interface Check {
   fix?: string;
 }
 
-export interface Target { id: string; label: string; titles: string[]; strength: number }
+export interface Target { id: string; label: string; titles: string[]; strength: number; /** Why the resume points here, in plain words. */ evidence: string[] }
 
 export interface ResumeAnalysis {
   empty: boolean;
@@ -71,6 +71,8 @@ export interface ResumeAnalysis {
   level: string;
   fixes: string[];
   targets: Target[];
+  /** Job titles the resume itself states, most recent first. */
+  roleTitles: string[];
   bulletReview: BulletReview[];
 }
 
@@ -157,6 +159,74 @@ function collectBullets(lines: string[], minGlyph = 3): string[] {
   return lines.filter(looksLikeBullet).map((l) => l.trim().replace(GLYPH, ""));
 }
 
+/** What a degree or field of study points at, by field id. A degree is strong evidence for someone with little work history. */
+const MAJORS: Record<string, RegExp> = {
+  swe: /computer (science|engineering)|software|information (technology|systems)|informatics/i,
+  security: /cyber\s?security|information (assurance|security)|network (security|administration)/i,
+  data: /data (science|analytics)|statistics|applied mathematics|analytics/i,
+  health: /nursing|health ?(science|care|information)|pre-?med|biology|kinesiology|public health|pharmac\w+|dental|radiolog\w+|respiratory|medical|physical therapy|exercise science|biomedical/i,
+  finance: /accounting|finance|economics|banking|actuarial/i,
+  marketing: /marketing|communications?|journalism|public relations|advertising|english|mass media/i,
+  design: /graphic design|design|film|fine arts|animation|photography|visual arts|multimedia/i,
+  education: /education|teaching|early childhood|child development|curriculum|pedagog\w+/i,
+  hr: /human resources|organizational (behavior|leadership)|industrial[- ]organizational/i,
+  legal: /criminal justice|legal studies|paralegal|political science|pre-?law|\blaw\b/i,
+  business: /business (administration|management|analytics)|management|entrepreneurship|project management/i,
+  sales: /sales|business administration/i,
+  ops: /supply chain|logistics|operations|industrial engineering/i,
+  hospitality: /hospitality|culinary|tourism|restaurant|hotel/i,
+  trades: /automotive|electrical|hvac|construction|welding|mechanical technology|diesel/i,
+  admin: /office (administration|technology)|administrative/i,
+  customer: /customer (service|experience)/i,
+};
+
+const DATE_TAIL = /\s*\(?\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\.?\s+\d{4}.*$|\s*\b(?:19|20)\d\d\s*[-\u2013\u2014]\s*(?:\d{4}|present|current).*$/i;
+
+/** The job titles a resume states: the non-bullet lines of Experience, cut back to the title itself. */
+function titleLines(experience: string[]): string[] {
+  const out: string[] = [];
+  for (const raw of experience) {
+    const t = raw.trim();
+    if (!t || GLYPH.test(t) || looksLikeBullet(t) || t.length > 110) continue;
+    const head = t.replace(DATE_TAIL, "").split("|")[0].split(/\s[-\u2013\u2014]\s/)[0].split(",")[0].trim();
+    const words = head.split(/\s+/);
+    if (words.length >= 1 && words.length <= 6 && /^[A-Z]/.test(head) && !/\d|@/.test(head)) out.push(head);
+  }
+  return [...new Set(out)];
+}
+
+/**
+ * Works out which kinds of work a resume points at. Skills alone cannot do it: a nurse or a barista lists
+ * few of the tools a vocabulary can name. So three independent signals vote: the skills, the job titles
+ * the person has held, and what they studied. Nothing defaults to software: no signal, no field.
+ */
+export function detectFields(i: { header: string[]; experience: string[]; education: string; skills: Set<string>; github: boolean }) {
+  const roleTitles = titleLines(i.experience);
+  const headline = i.header.slice(1, 5).filter((l) => !/[@\d|]/.test(l) && l.split(/\s+/).length <= 8);
+  const titleEvidence = [...roleTitles, ...headline];
+  const scored = DOMAINS.map((d) => {
+    const skillHits = d.skills.filter((s) => i.skills.has(s));
+    const skill = skillHits.length / Math.min(9, d.skills.length);
+    const titleHit = titleEvidence.filter((t) => d.match.test(t) || d.titles.some((w) => t.toLowerCase().includes(w)));
+    const title = Math.min(0.6, titleHit.length * 0.3);
+    const major = MAJORS[d.id]?.exec(i.education)?.[0];
+    const strength = skill * 0.6 + title + (major ? 0.35 : 0);
+    const evidence = [
+      titleHit.length ? `job title: ${titleHit[0]}` : "",
+      major ? `studied: ${major.toLowerCase()}` : "",
+      skillHits.length ? `${skillHits.length} matching skill${skillHits.length === 1 ? "" : "s"}` : "",
+    ].filter(Boolean);
+    return { id: d.id, label: d.label, titles: d.titles, tech: d.tech, strength, evidence };
+  }).sort((a, b) => b.strength - a.strength);
+  const top = scored[0]?.strength ?? 0;
+  const picked = scored.filter((t) => t.strength > 0.3 && t.strength >= top * 0.5).slice(0, 3);
+  return {
+    targets: picked.map(({ tech: _t, ...t }) => ({ ...t, strength: Math.min(1, t.strength) })) as Target[],
+    roleTitles: roleTitles.slice(0, 3),
+    topTech: !!picked[0]?.tech,
+  };
+}
+
 export function parseResume(text: string, now: number = Date.now()): ResumeAnalysis {
   const clean = text.replace(/\r/g, "");
   const lines = clean.split("\n").map((l) => l.replace(/\s+$/g, "")).filter((l) => l.trim());
@@ -201,15 +271,9 @@ export function parseResume(text: string, now: number = Date.now()): ResumeAnaly
   });
 
   const have = new Set(skills);
-  const ranked = DOMAINS
-    .map((d) => ({ id: d.id, label: d.label, titles: d.titles, tech: d.tech, strength: d.skills.filter((s) => have.has(s)).length / Math.min(9, d.skills.length) }))
-    .sort((a, b) => b.strength - a.strength);
+  const { targets, roleTitles, topTech } = detectFields({ header: sectionsText.header ?? [], experience: sectionsText.experience ?? [], education: eduText, skills: have, github: !!github });
   // A resume whose strongest direction is not technical is graded on the things that matter for that work.
-  const techy = !!github || !ranked[0] || ranked[0].strength <= 0.3 || ranked[0].tech;
-  const targets: Target[] = ranked
-    .filter((t) => t.strength > 0.3)
-    .slice(0, 4)
-    .map(({ tech: _t, ...t }) => ({ ...t, strength: Math.min(1, t.strength) }));
+  const techy = !!github || !targets[0] || topTech;
 
   const empty = words.length < 25;
   const checks: Check[] = empty ? [] : [
@@ -268,7 +332,7 @@ export function parseResume(text: string, now: number = Date.now()): ResumeAnaly
 
   return {
     empty, wordCount: words.length, email, phone, linkedin, github, sections, bullets, actionVerbBullets, quantifiedBullets,
-    weakPhrases, skills, gradYear, gpa, isStudent, oddCharacters, checks, groupScores, overall, grade, level, fixes, targets,
+    weakPhrases, skills, gradYear, gpa, isStudent, oddCharacters, checks, groupScores, overall, grade, level, fixes, targets, roleTitles,
     bulletReview: bullets.map(reviewBullet),
   };
 }
@@ -347,4 +411,24 @@ export function replaceBullet(text: string, original: string, rewrite: string): 
   const esc = (w: string) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const re = new RegExp(original.trim().split(/\s+/).map(esc).join("\\s+"));
   return re.test(text) ? text.replace(re, rewrite) : text;
+}
+
+/**
+ * The profile a resume implies: fields, titles, skills, level and the apply kit. Replaces what the
+ * previous resume implied, so uploading a different resume re-aims the whole search.
+ */
+export function profileFromResume(text: string, base: import("./types").Profile): import("./types").Profile {
+  const a = parseResume(text);
+  const kit = extractKit(text);
+  const ids = a.targets.map((t) => t.id);
+  const fieldTitles = TARGET_OPTIONS.filter((o) => ids.includes(o.id)).flatMap((o) => o.titles);
+  return {
+    ...base,
+    level: a.isStudent || a.bullets.length < 6 ? "entry" : "any",
+    skills: a.skills,
+    targets: ids,
+    wantTitles: [...new Set([...a.roleTitles, ...fieldTitles])],
+    homeMetro: base.homeMetro || kit.location,
+    kit: { ...base.kit, ...Object.fromEntries(Object.entries(kit).filter(([, v]) => v)) } as import("./types").Kit,
+  };
 }

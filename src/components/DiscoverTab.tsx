@@ -77,7 +77,9 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
     }
   }, [saved, lastSearchAt, results.length, status.phase]);
 
+  const noField = profile.targets.length === 0 && profile.wantTitles.length === 0;
   const run = useCallback(async () => {
+    if (noField) return;   // nothing says what to look for: never guess software
     abort.current?.abort();
     const ac = new AbortController(); abort.current = ac;
     const chosen = boards.filter(isOn);
@@ -126,7 +128,7 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
     const merged = dedupeAcross(dedupeAcross(dedupeAcross(boardRoles, communityRoles), remoteRoles), employerRoles);
     const best = merged.map((r) => ({ r, fit: scoreFit(r, profile, weights).fit })).sort((a, b) => b.fit - a.fit).slice(0, KEEP_FOR_QUEUE).map((x) => x.r);
     onSearched(best, today());
-  }, [boards, overrides, wantsTech, wantsOther, community, remote, bigEmployers, usOnly, spec, profile, weights, lastSearchAt, onSearched]);
+  }, [boards, overrides, wantsTech, wantsOther, community, remote, bigEmployers, usOnly, spec, profile, weights, lastSearchAt, onSearched, noField]);
 
   // "Find my matches" elsewhere in the app bumps runSignal to start a search.
   const lastSignal = useRef(0);
@@ -179,13 +181,14 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
       <section className={`${card} p-5`}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-xl font-extrabold">Search live</h2>
+            <h2 className="text-xl font-semibold">Search live</h2>
             <p className="text-sm text-slate-950/60 dark:text-slate-100/60">Reads real postings for the fields you chose straight from public sources. Nothing about you is sent.</p>
           </div>
-          <button className={btn} onClick={() => void run()} disabled={busy || (!boards.some(isOn) && !community && !remote && !bigEmployers)}>
+          <button className={btn} onClick={() => void run()} disabled={busy || noField || (!boards.some(isOn) && !community && !remote && !bigEmployers)}>
             {busy ? (status.phase === "search" ? `Searching ${status.done}/${status.total}...` : `Reading descriptions ${status.done}/${status.total}...`) : "Search now"}
           </button>
         </div>
+        {noField && <p className="mt-4 rounded-lg border border-slate-200 px-4 py-3 text-sm dark:border-[#23252a]">Nothing to search for yet. Upload your resume and Applyr will read your field from it, or choose one on the Profile tab.</p>}
         {busy && (
           <div className="mt-4" aria-live="polite">
             <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-500/20"><div className="shimmer-bar h-full rounded-full transition-all duration-500" style={{ width: `${Math.max(6, Math.round((status.done / Math.max(1, status.total)) * 100))}%` }} /></div>
@@ -217,7 +220,7 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
             const on = isOn(b);
             return (
               <button key={keyOf(b)} aria-pressed={on} onClick={() => setOverrides({ ...overrides, [keyOf(b)]: !on })}
-                className={`press rounded-full border px-3 py-1 text-xs font-medium transition-all ${on ? "border-transparent bg-blue-600 text-white shadow" : "border-slate-200 bg-white/70 hover:-translate-y-0.5 hover:bg-blue-50 dark:border-slate-500/30 dark:bg-transparent"}`}>
+                className={`press rounded-full border px-3 py-1 text-xs font-medium transition-all ${on ? "border-transparent bg-blue-600 text-white shadow" : "border-slate-200 bg-white/70 hover:bg-blue-50 dark:border-slate-500/30 dark:bg-transparent"}`}>
                 {b.label}
               </button>
             );
@@ -237,7 +240,7 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
         <div className="grid gap-6 lg:grid-cols-4">
           <div className="space-y-6 lg:col-span-1">
             <section className={`${card} p-4`}>
-              <div className="text-5xl font-extrabold tabular-nums">{strong}</div>
+              <div className="text-5xl font-semibold tabular-nums">{strong}</div>
               <div className="text-sm text-neutral-500">strong matches (70%+) out of {fromSaved ? `your best ${scored.length} from the last search` : `${scored.length} roles`}</div>
               {bySource.length > 0 && <p className="mt-2 text-xs text-neutral-400">{bySource.map(([s, n]) => `${n} on ${SOURCE_NAME[s] ?? s}`).join(" · ")}</p>}
               {fromSaved && <p className="mt-2 text-xs text-neutral-500">Showing your last search{lastSearchAt ? ` (${lastSearchAt})` : ""}. Search again for fresh roles.</p>}

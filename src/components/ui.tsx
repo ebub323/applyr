@@ -9,29 +9,25 @@ export function fitTone(fit: number) {
 
 export function FitPill({ fit }: { fit: number }) {
   return (
-    <span className={`inline-block min-w-9 rounded-md px-2 py-0.5 text-center font-mono text-[12px] font-bold text-white ${fitTone(fit)}`}>{fit}</span>
+    <span className={`inline-block min-w-9 rounded-md px-2 py-0.5 text-center font-mono text-[12px] font-medium text-white ${fitTone(fit)}`}>{fit}</span>
   );
 }
 
-/** Rotating colours so a row of tags reads as a row of different things. */
+/** Quiet tags: two tones, so a row reads as a list of terms and not a bag of sweets. */
 export const TAG_TONES = [
-  "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200 dark:bg-blue-500/10 dark:text-blue-200 dark:ring-blue-500/30",
-  "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-500/30",
-  "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-500/30",
-  "bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-200 dark:bg-sky-500/10 dark:text-sky-200 dark:ring-sky-500/30",
-  "bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-500/30",
-  "bg-teal-50 text-teal-700 ring-1 ring-inset ring-teal-200 dark:bg-teal-500/10 dark:text-teal-200 dark:ring-teal-500/30",
+  "bg-[#edecfb] text-[#36439f] ring-1 ring-inset ring-[#dcdaf6]",
+  "bg-[#efeff5] text-[#3d3860] ring-1 ring-inset ring-[#e1e0ec]",
 ];
 export const tagTone = (s: string) => TAG_TONES[[...s].reduce((n, c) => n + c.charCodeAt(0), 0) % TAG_TONES.length];
 
 export const card =
-  "rounded-2xl border border-slate-200 bg-white shadow-none dark:border-[#23252a] dark:bg-[#0f1011]";
+  "rounded-2xl border border-[#e1e0ec] bg-white";
 export const input =
-  "w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-600 dark:bg-[#08090a] dark:focus:ring-blue-500/20";
+  "w-full rounded-lg border border-[#d6d5e3] bg-white px-3 py-2 text-sm outline-none transition placeholder:text-[#9896ad] focus:border-[#5266eb] focus:ring-2 focus:ring-[#5266eb]/20";
 export const btn =
-  "press rounded-lg bg-blue-600 px-3.5 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40";
+  "rounded-full bg-[#5266eb] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#4354c7] disabled:cursor-not-allowed disabled:opacity-40";
 export const btnGhost =
-  "press rounded-lg border border-slate-300 bg-white px-3.5 py-1.5 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-600 dark:bg-transparent dark:text-slate-200 dark:hover:bg-slate-800";
+  "rounded-full border border-[#d6d5e3] bg-white px-4 py-2 text-sm font-medium text-[#3d3860] transition hover:border-[#9896ad] hover:bg-[#f7f7fb] disabled:opacity-40";
 
 export function TagInput({ value, onChange, placeholder }: { value: string[]; onChange: (v: string[]) => void; placeholder: string }) {
   const [draft, setDraft] = useState("");
@@ -41,7 +37,7 @@ export function TagInput({ value, onChange, placeholder }: { value: string[]; on
     setDraft("");
   };
   return (
-    <div className="flex flex-wrap gap-1.5 rounded-xl border border-slate-200 bg-white p-1.5 transition focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-200/60 dark:border-slate-500/30 dark:bg-[#08090a]">
+    <div className="flex flex-wrap gap-1.5 rounded-lg border border-[#d6d5e3] bg-white p-1.5 transition focus-within:border-[#5266eb] focus-within:ring-2 focus-within:ring-[#5266eb]/20">
       {value.map((t) => (
         <span key={t} className={`anim-pop flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${tagTone(t)}`}>
           {t}

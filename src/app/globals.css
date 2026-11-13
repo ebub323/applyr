@@ -1,44 +1,54 @@
 @import "tailwindcss";
 
-/* Linear-inspired: near-black canvas, charcoal panels, hairline borders, one lavender accent. Always dark. */
+/*
+ * Mercury-inspired, with an editorial serif for headings: warm-cool paper canvas, ink-violet text,
+ * one indigo action colour, hairline borders, no shadows, no decorative motion. Light only.
+ */
 @custom-variant dark (&:where(.dark, .dark *));
 
-:root { --background: #010102; --foreground: #f7f8f8; color-scheme: dark; }
+:root { --background: #f7f7fb; --foreground: #1f1d33; color-scheme: light; }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
+  --font-serif: var(--font-newsreader);
   --font-mono: var(--font-geist-mono);
 }
 
 @theme {
+  --radius-lg: 8px;
   --radius-xl: 10px;
-  --radius-2xl: 12px;
-  /* neutrals -> Linear surfaces and ink */
-  --color-slate-50: #f7f8f8; --color-slate-100: #e6e8ec; --color-slate-200: #d0d6e0; --color-slate-300: #b4bac4;
-  --color-slate-400: #8a8f98; --color-slate-500: #62666d; --color-slate-600: #3e3e44; --color-slate-700: #34343a;
-  --color-slate-800: #23252a; --color-slate-900: #141516; --color-slate-950: #0f1011;
-  --color-neutral-50: #f7f8f8; --color-neutral-100: #e6e8ec; --color-neutral-200: #d0d6e0; --color-neutral-300: #b4bac4;
-  --color-neutral-400: #8a8f98; --color-neutral-500: #62666d; --color-neutral-600: #3e3e44; --color-neutral-700: #34343a;
-  --color-neutral-800: #23252a; --color-neutral-900: #141516; --color-neutral-950: #0f1011;
-  /* blue -> Linear lavender */
-  --color-blue-50: #f1f2ff; --color-blue-100: #e1e4ff; --color-blue-200: #c5caff; --color-blue-300: #a4adff;
-  --color-blue-400: #828fff; --color-blue-500: #6e79db; --color-blue-600: #5e6ad2; --color-blue-700: #4f5ab8;
-  --color-blue-800: #3f4896; --color-blue-900: #2d3370;
-  --color-emerald-400: #3fbf5f; --color-emerald-500: #27a644; --color-emerald-600: #208a39;
+  --radius-2xl: 14px;
+  /* neutrals -> ink-violet */
+  --color-slate-50: #f7f7fb; --color-slate-100: #edecf4; --color-slate-200: #e1e0ec; --color-slate-300: #c9c8d8;
+  --color-slate-400: #9896ad; --color-slate-500: #70707d; --color-slate-600: #554e7b; --color-slate-700: #3d3860;
+  --color-slate-800: #28253b; --color-slate-900: #1f1d33; --color-slate-950: #171721;
+  --color-neutral-50: #f7f7fb; --color-neutral-100: #edecf4; --color-neutral-200: #e1e0ec; --color-neutral-300: #c9c8d8;
+  --color-neutral-400: #8e8ca3; --color-neutral-500: #6b6a80; --color-neutral-600: #554e7b; --color-neutral-700: #3d3860;
+  --color-neutral-800: #28253b; --color-neutral-900: #1f1d33; --color-neutral-950: #171721;
+  /* blue -> Mercury indigo */
+  --color-blue-50: #f2f3fe; --color-blue-100: #e6e8fc; --color-blue-200: #cfd4f8; --color-blue-300: #aab3f3;
+  --color-blue-400: #8190ee; --color-blue-500: #6577ec; --color-blue-600: #5266eb; --color-blue-700: #4354c7;
+  --color-blue-800: #36439f; --color-blue-900: #2a3478;
+  --color-emerald-500: #2f8f6b; --color-emerald-600: #25785a; --color-emerald-400: #4aa585;
+  --color-amber-500: #b7791f; --color-amber-600: #9a6419;
+  --color-rose-500: #b4445a; --color-teal-500: #2f8f8b; --color-sky-500: #5b86c9;
 }
 
 body {
   color: var(--foreground);
   font-family: var(--font-inter), system-ui, sans-serif;
   background: var(--background);
-  letter-spacing: -0.011em;
   font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
 }
-h1, h2, h3 { letter-spacing: -0.03em; }
-:focus-visible { outline: 2px solid #5e6ad2; outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--font-newsreader), Georgia, serif; font-weight: 500; letter-spacing: -0.015em; }
+h2.uppercase, h3.uppercase { font-family: var(--font-inter), system-ui, sans-serif; font-weight: 600; letter-spacing: 0.08em; font-size: 11px; }
+:focus-visible { outline: 2px solid #5266eb; outline-offset: 2px; }
+::selection { background: #e6e8fc; }
 
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes pop { 0% { transform: scale(0.9); opacity: 0; } 70% { transform: scale(1.04); } 100% { transform: scale(1); opacity: 1; } }
 @keyframes shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
@@ -48,14 +58,14 @@ h1, h2, h3 { letter-spacing: -0.03em; }
 }
 @keyframes stripe { from { background-position: 0 0; } to { background-position: 28px 0; } }
 
-.anim-up { animation: fade-up 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
-.anim-pop { animation: pop 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.1) both; }
-.lift { transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease; }
-.lift:hover { transform: translateY(-1px); box-shadow: 0 10px 24px -14px rgba(15, 23, 42, 0.35); border-color: rgb(148 163 184); }
+.anim-up { animation: fade-in 0.3s ease both; }
+.anim-pop { }
+.lift { transition: border-color 0.15s ease; }
+.lift:hover { border-color: rgb(201 200 216); }
 .press { transition: transform 0.1s ease, background-color 0.15s ease, border-color 0.15s ease; }
-.press:active:not(:disabled) { transform: scale(0.97); }
+
 .shimmer-bar {
-  background-color: #2563eb;
+  background-color: #5266eb;
   background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.18) 0 10px, transparent 10px 20px);
   background-size: 28px 28px;
   animation: stripe 0.8s linear infinite;

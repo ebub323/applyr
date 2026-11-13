@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { DEFAULT_PROFILE, SEED_ROLES } from "./data";
+import { profileFromResume } from "./resume";
 import { DEFAULT_WEIGHTS } from "./score";
 import type { Profile, Role, Weights } from "./types";
 
@@ -30,9 +31,13 @@ const initial = (): AppState => ({
 /** Fills anything an older save lacks, so a new field never breaks someone's saved board. */
 export function normalise(saved: Partial<AppState>): AppState {
   const base = initial();
+  let profile = { ...base.profile, ...saved.profile, kit: { ...base.profile.kit, ...saved.profile?.kit } };
+  // Older saves began with a software profile nobody chose. Re-read the resume if there is one, otherwise start neutral.
+  const legacy = profile.targets.join() === "swe,backend,web" && profile.wantTitles[0] === "Software Engineer Intern";
+  if (legacy) profile = saved.resume ? profileFromResume(saved.resume, { ...base.profile, kit: profile.kit }) : { ...base.profile, kit: profile.kit };
   return {
     ...base, ...saved,
-    profile: { ...base.profile, ...saved.profile, kit: { ...base.profile.kit, ...saved.profile?.kit } },
+    profile,
     weights: { ...base.weights, ...saved.weights },
     roles: saved.roles ?? base.roles,
     lastResults: saved.lastResults ?? [],

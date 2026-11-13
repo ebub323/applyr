@@ -7,8 +7,6 @@ import type { Kit, Profile, Weights } from "@/lib/types";
 import CopyButton from "./CopyButton";
 import { btn, btnGhost, card, input, TagInput } from "./ui";
 
-const FIELD_GRADS = ["bg-blue-600", "bg-emerald-600", "bg-amber-600", "bg-sky-600", "bg-rose-600", "bg-teal-600"];
-
 const WEIGHT_LABELS: { key: keyof Weights; label: string; help: string }[] = [
   { key: "title", label: "Title fit", help: "How much the job title matches what you want" },
   { key: "skills", label: "Skill overlap", help: "How many of the posting's skills and tools you have" },
@@ -52,24 +50,37 @@ export default function ProfileTab({ profile, weights, resume, onProfile, onWeig
     <div className="grid gap-6 lg:grid-cols-5">
       <div className="space-y-6 lg:col-span-3">
         {detected && (
-          <section className={`${card} anim-up overflow-hidden p-0`}>
-            <div className="bg-slate-900 px-5 py-4 text-white">
-              <div className="text-xs font-bold uppercase tracking-wider opacity-90">Read from your resume</div>
-              <h2 className="mt-0.5 text-xl font-extrabold">Looks like you are after {picked.length === 1 ? picked[0].label : picked.slice(0, -1).map((p) => p.label).join(", ") + " and " + picked[picked.length - 1].label}</h2>
+          <section className={`${card} overflow-hidden`}>
+            <div className="border-b border-[#e1e0ec] px-6 py-5">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#5266eb]">Read from your resume</div>
+              <h2 className="mt-2 text-[28px] leading-tight">{picked.length === 1 ? picked[0].label : picked.slice(0, -1).map((p) => p.label).join(", ") + " and " + picked[picked.length - 1].label}</h2>
+              {analysis.roleTitles.length > 0 && <p className="mt-1.5 text-sm text-[#70707d]">Most recent role: {analysis.roleTitles[0]}</p>}
             </div>
-            <div className="p-5">
-              <div className="flex flex-wrap gap-2.5">
-                {picked.map((o, i) => (
-                  <span key={o.id} className={`anim-pop inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold text-white shadow-md ${FIELD_GRADS[i % FIELD_GRADS.length]}`} style={{ animationDelay: `${i * 70}ms` }}>
-                    {o.label}{strength(o.id) !== undefined && <span className="rounded-full bg-white/25 px-1.5 text-[11px]">{Math.round(strength(o.id)! * 100)}%</span>}
-                  </span>
-                ))}
-              </div>
-              <p className="mt-3 text-sm text-slate-950/70 dark:text-slate-100/70">
+            <ul className="divide-y divide-[#edecf4]">
+              {picked.map((o) => {
+                const t = analysis.targets.find((x) => x.id === o.id);
+                return (
+                  <li key={o.id} className="flex flex-wrap items-center justify-between gap-3 px-6 py-3.5">
+                    <div>
+                      <div className="text-sm font-medium">{o.label}</div>
+                      {t && t.evidence.length > 0 && <div className="mt-0.5 text-xs text-[#70707d]">{t.evidence.join(" · ")}</div>}
+                    </div>
+                    {strength(o.id) !== undefined && (
+                      <div className="flex items-center gap-2" title="How strongly the resume points here">
+                        <div className="h-1 w-20 overflow-hidden rounded-full bg-[#e1e0ec]"><div className="h-full rounded-full bg-[#5266eb]" style={{ width: `${Math.round(strength(o.id)! * 100)}%` }} /></div>
+                        <span className="w-9 text-right font-mono text-xs text-[#554e7b]">{Math.round(strength(o.id)! * 100)}%</span>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="border-t border-[#e1e0ec] bg-[#fbfbfe] px-6 py-4">
+              <p className="text-sm text-[#554e7b]">
                 {profile.level === "entry" ? "Searching entry-level roles and internships." : "Searching roles at every level."} Not right? Change it and every match re-ranks.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <button className={btn} onClick={onNext}>Looks right, find my matches →</button>
+                <button className={btn} onClick={onNext}>Looks right, find my matches</button>
                 <button className={btnGhost} onClick={() => setChanging(true)}>Change what I am looking for</button>
               </div>
             </div>
@@ -80,15 +91,15 @@ export default function ProfileTab({ profile, weights, resume, onProfile, onWeig
         <section className={`${card} anim-up p-5`}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 className="text-lg font-bold">What are you looking for?</h2>
-              <p className="mt-1 text-sm text-slate-950/60 dark:text-slate-100/60">{resume ? "Pick the kinds of work you want. Every answer changes how roles are ranked, immediately." : "Upload your resume and this fills itself in. Or pick by hand."}</p>
+              <h2 className="text-2xl">What are you looking for?</h2>
+              <p className="mt-1 text-sm text-slate-950/60 dark:text-slate-100/60">{resume ? "Pick the kinds of work you want. Every answer changes how roles are ranked, immediately." : "Upload your resume and this fills itself in from your job titles, degree and skills. Or pick by hand."}</p>
             </div>
             <div className="flex gap-2">
               {resume && analysis.targets.length > 0 && <button className={btnGhost} onClick={reread}>Use what my resume says</button>}
               {changing && profile.targets.length > 0 && <button className={btn} onClick={() => setChanging(false)}>Done</button>}
             </div>
           </div>
-          {[{ name: "Any kind of work", tech: false }, { name: "Software and IT", tech: true }].map((g) => (
+          {[{ name: "Business, care, trades and everything else", tech: false }, { name: "Software and IT", tech: true }].map((g) => (
             <div key={g.name} className="mt-4">
               <div className="text-xs font-semibold uppercase tracking-wide text-neutral-500">{g.name}</div>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -96,7 +107,7 @@ export default function ProfileTab({ profile, weights, resume, onProfile, onWeig
                   const on = profile.targets.includes(o.id);
                   return (
                     <button key={o.id} onClick={() => toggleTarget(o.id)} aria-pressed={on}
-                      className={`press rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all ${on ? "border-transparent bg-blue-600 text-white shadow-md" : "border-slate-200 bg-white/70 hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-50 dark:border-slate-500/30 dark:bg-transparent"}`}>
+                      className={`press rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all ${on ? "border-transparent bg-blue-600 text-white" : "border-slate-200 bg-white/70 hover:border-blue-300 hover:bg-blue-50 dark:border-slate-500/30 dark:bg-transparent"}`}>
                       {o.label}
                     </button>
                   );

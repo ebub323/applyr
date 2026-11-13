@@ -1,13 +1,14 @@
 import { EMPTY_KIT, type Profile, type Role } from "./types";
 
+/** Neutral until a resume is read: nothing here assumes a field, so nothing steers a search toward software. */
 export const DEFAULT_PROFILE: Profile = {
-  skills: ["TypeScript", "React", "Python", "Java", "C++", "C#", "SQL", "PostgreSQL", "Supabase", "AWS", "Git", "Docker", "Next.js", "HTML", "CSS"],
-  wantTitles: ["Software Engineer Intern", "Software Engineering Intern", "Software Developer Intern", "Junior Software", "New Grad"],
-  homeMetro: "Baltimore, Washington, DC, Maryland",
+  skills: [],
+  wantTitles: [],
+  homeMetro: "",
   willRelocate: true,
-  minHourly: 18,
+  minHourly: 0,
   level: "entry",
-  targets: ["swe", "backend", "web"],
+  targets: [],
   usCitizen: true,
   hasClearance: false,
   kit: EMPTY_KIT,

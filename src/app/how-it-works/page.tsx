@@ -3,9 +3,9 @@ export const metadata = { title: "How Applyr works" };
 function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
     <li className="flex gap-4">
-      <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-neutral-900 font-mono text-xs text-white dark:bg-white dark:text-neutral-900">{n}</span>
+      <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full border border-[#cfd4f8] bg-[#f2f3fe] font-mono text-xs text-[#36439f]">{n}</span>
       <div>
-        <h3 className="font-medium">{title}</h3>
+        <h3 className="text-lg">{title}</h3>
         <p className="mt-1 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">{children}</p>
       </div>
     </li>
@@ -15,7 +15,7 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
 export default function HowItWorks() {
   return (
     <div className="mx-auto max-w-3xl px-5 py-10">
-      <h1 className="text-3xl font-semibold tracking-tight">How it works</h1>
+      <h1 className="text-5xl">How it works</h1>
       <p className="mt-3 text-neutral-600 dark:text-neutral-400">
         Applying at volume fails in two places: a resume that software cannot read or a recruiter will not finish, and a search that
         wastes the day on roles you will never get. Applyr works on both, and it does all of it in your browser.
@@ -24,7 +24,7 @@ export default function HowItWorks() {
       <ol className="mt-9 space-y-7">
         <Step n={1} title="Read your resume">
           Upload a PDF, DOCX or text file, or paste it. The text is extracted on your device with no upload. Contact details, sections,
-          bullets, graduation year, GPA and 60-odd technologies are pulled out by rules you can read, not a model that guesses.
+          bullets, job titles, degree, graduation year, GPA and the skills and tools you name are pulled out by rules you can read, not a model that guesses. Your field is worked out from those titles, that degree and those skills, so a nursing, finance or retail resume is placed as readily as an engineering one.
         </Step>
         <Step n={2} title="Grade it, check by check">
           Fifteen checks across ATS readiness, impact, technical depth and completeness. Do bullets start with a verb? Do they

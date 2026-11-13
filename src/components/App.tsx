@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { exportBackup, parseBackup } from "@/lib/backup";
 import { buildQueue, daysBetween, followUpsDue, streak } from "@/lib/habit";
-import { extractKit, parseResume, TARGET_OPTIONS } from "@/lib/resume";
+import { profileFromResume } from "@/lib/resume";
 import { scoreFit } from "@/lib/score";
 import { useAppState } from "@/lib/state";
 import { APPLIED_STAGES, REPLIED_STAGES, STAGES, type Profile, type Role, type Stage } from "@/lib/types";
@@ -13,15 +13,15 @@ import ProfileTab from "./ProfileTab";
 import ResumeTab from "./ResumeTab";
 import RoleDrawer from "./RoleDrawer";
 import TodayTab from "./TodayTab";
-import { btn, btnGhost, card, Confetti } from "./ui";
+import { btn, btnGhost, card } from "./ui";
 
 type Tab = "resume" | "profile" | "discover" | "today" | "board";
 const TABS: { id: Tab; label: string; dot: string }[] = [
-  { id: "resume", label: "Resume", dot: "bg-sky-500" },
-  { id: "profile", label: "Profile", dot: "bg-emerald-500" },
-  { id: "discover", label: "Discover", dot: "bg-amber-500" },
-  { id: "today", label: "Today", dot: "bg-rose-500" },
-  { id: "board", label: "Board", dot: "bg-teal-500" },
+  { id: "resume", label: "Resume", dot: "" },
+  { id: "profile", label: "Profile", dot: "" },
+  { id: "discover", label: "Discover", dot: "" },
+  { id: "today", label: "Today", dot: "" },
+  { id: "board", label: "Board", dot: "" },
 ];
 const today = () => new Date().toISOString().slice(0, 10);
 const isDemo = (r: Role) => /^s\d+$/.test(r.id);
@@ -115,44 +115,36 @@ export default function App() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-8">
-      <Confetti burst={burst} />
-      <nav className="mb-8 flex flex-wrap items-center gap-2" aria-label="Steps">
+    <div className="mx-auto max-w-6xl px-6 py-8">
+      <nav className="mb-8 flex flex-wrap items-end gap-x-1 border-b border-[#e1e0ec]" aria-label="Steps">
         {TABS.map((t, i) => (
           <button key={t.id} onClick={() => setTab(t.id)} aria-current={tab === t.id ? "step" : undefined}
-            className={`press flex items-center gap-2 rounded-lg border px-3.5 py-2 text-sm font-medium transition-all ${tab === t.id ? "border-slate-900 bg-slate-900 text-white shadow-sm dark:border-white dark:bg-white dark:text-slate-900" : "border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-900 dark:border-slate-700 dark:bg-[#16181d] dark:text-slate-300"}`}>
-            <span aria-hidden className={`size-2 rounded-full ${t.dot} ${tab === t.id ? "anim-pop" : ""}`} />{t.label}
-            {t.id === "today" && due.length > 0 && <span className="rounded-full bg-amber-500 px-1.5 text-[10px] font-semibold text-white" title="Follow-ups due">{due.length}</span>}
+            className={`-mb-px flex items-baseline gap-2 border-b-2 px-4 pb-3 pt-2 text-sm font-medium transition-colors ${tab === t.id ? "border-[#5266eb] text-[#1f1d33]" : "border-transparent text-[#70707d] hover:text-[#1f1d33]"}`}>
+            <span aria-hidden className="font-mono text-[11px] text-[#9896ad]">{String(i + 1).padStart(2, "0")}</span>{t.label}
+            {t.id === "today" && due.length > 0 && <span className="rounded-full bg-[#5266eb] px-1.5 text-[10px] font-semibold text-white" title="Follow-ups due">{due.length}</span>}
           </button>
         ))}
-        <div className="ml-auto flex items-center gap-3 text-sm">
+        <div className="ml-auto flex items-center gap-3 pb-2 text-sm">
           <div className="hidden w-44 sm:block" title="Applications logged today against your daily goal">
-            <div className="flex justify-between text-xs text-neutral-500"><span>Today</span><span className="font-mono">{appliedToday} / {state.dailyGoal}</span></div>
-            <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-500/20"><div className="h-full rounded-full bg-emerald-400 transition-all duration-700" style={{ width: `${goalPct}%` }} /></div>
+            <div className="flex justify-between text-[11px] uppercase tracking-wider text-[#70707d]"><span>Today</span><span className="font-mono normal-case">{appliedToday} / {state.dailyGoal}</span></div>
+            <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-[#e1e0ec]"><div className="h-full rounded-full bg-[#5266eb] transition-all duration-700" style={{ width: `${goalPct}%` }} /></div>
           </div>
           <input type="number" min={1} max={200} value={state.dailyGoal} aria-label="Daily application goal" title="Daily goal"
             onChange={(e) => update((s) => ({ ...s, dailyGoal: Math.max(1, Number(e.target.value) || 1) }))}
-            className="w-16 rounded-xl border border-slate-200 bg-white/80 px-2 py-1 text-center text-sm outline-none focus:border-blue-400 dark:border-slate-500/30 dark:bg-transparent" />
+            className="w-14 rounded-lg border border-[#d6d5e3] bg-white px-2 py-1 text-center text-sm outline-none focus:border-[#5266eb]" />
         </div>
       </nav>
 
-      {notice && <div role="status" className="anim-pop mb-4 flex items-center justify-between rounded-xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-900 dark:from-slate-800 dark:to-slate-800 dark:text-slate-100">{notice}<button aria-label="Dismiss" onClick={() => setNotice("")}>×</button></div>}
+      {notice && <div role="status" className="mb-4 flex items-center justify-between rounded-lg border border-[#e1e0ec] bg-white px-4 py-2 text-sm text-[#28253b]">{notice}<button aria-label="Dismiss" onClick={() => setNotice("")}>×</button></div>}
 
       <div className={tab === "resume" ? "" : "hidden"}>
         <ResumeTab
           resume={state.resume} resumeName={state.resumeName} profile={state.profile}
           onResume={(text, name) => update((s) => {
-            // The first time a resume arrives, fill the profile and the apply kit from it so nothing needs retyping.
-            if (text && !s.resume) {
-              const a = parseResume(text);
-              const ids = a.targets.map((t) => t.id);
-              const kit = extractKit(text);
-              return { ...s, resume: text, resumeName: name, onboarded: true, profile: { ...s.profile,
-                level: a.isStudent || a.bullets.length < 6 ? "entry" as const : "any" as const,
-                skills: a.skills.length ? a.skills : s.profile.skills,
-                targets: ids.length ? ids : s.profile.targets,
-                wantTitles: ids.length ? [...new Set(TARGET_OPTIONS.filter((o) => ids.includes(o.id)).flatMap((o) => o.titles))] : s.profile.wantTitles,
-                kit: { ...s.profile.kit, ...Object.fromEntries(Object.entries(kit).filter(([, v]) => v)) } } };
+            // A new resume re-aims the whole profile: its field, titles, skills and apply kit all come from what it says.
+            if (text && text !== s.resume) {
+              const demoOnly = s.roles.every(isDemo);
+              return { ...s, resume: text, resumeName: name, onboarded: true, roles: demoOnly ? [] : s.roles, lastResults: [], profile: profileFromResume(text, s.profile) };
             }
             return { ...s, resume: text, resumeName: name, onboarded: s.onboarded || !!text };
           })}
@@ -183,7 +175,7 @@ export default function App() {
           ))}
         </div>
         <div className="mb-3 mt-6 flex flex-wrap items-center gap-2">
-          <h2 className="mr-auto text-sm font-semibold uppercase tracking-wide text-neutral-500">Your board <span className="font-normal normal-case text-neutral-400">drag cards between stages</span></h2>
+          <h2 className="mr-auto uppercase text-neutral-500">Your board <span className="font-normal normal-case text-neutral-400">drag cards between stages</span></h2>
           <button className={btn} onClick={() => setAdding((v) => !v)}>+ Add a role</button>
           <button className={btnGhost} onClick={goDiscover}>Find more</button>
           <button className={btnGhost} onClick={exportCsv}>Export CSV</button>

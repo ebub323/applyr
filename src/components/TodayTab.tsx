@@ -17,17 +17,17 @@ export default function TodayTab({ queue, followUps, goal, appliedToday, streakD
   return (
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-3">
-        <div className="lift anim-up rounded-2xl bg-slate-900 p-5 text-white shadow-sm">
-          <div className="text-4xl font-extrabold tabular-nums">{appliedToday}<span className="text-xl font-medium opacity-70"> / {goal}</span></div>
+        <div className="lift anim-up rounded-2xl bg-slate-900 p-5 text-white">
+          <div className="text-4xl font-semibold tabular-nums">{appliedToday}<span className="text-xl font-medium opacity-70"> / {goal}</span></div>
           <div className="text-sm font-medium opacity-90">{done ? "Goal reached. Nice work." : `${goal - appliedToday} to go today`}</div>
           <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-white/25"><div className="h-full rounded-full bg-white transition-all duration-700" style={{ width: `${pct}%` }} /></div>
         </div>
-        <div className="lift anim-up rounded-2xl bg-amber-500 p-5 text-white shadow-sm [animation-delay:70ms]">
-          <div className="text-4xl font-extrabold tabular-nums">{streakDays}<span className="text-xl font-medium opacity-70"> day{streakDays === 1 ? "" : "s"}</span></div>
+        <div className="lift anim-up rounded-2xl bg-amber-500 p-5 text-white [animation-delay:70ms]">
+          <div className="text-4xl font-semibold tabular-nums">{streakDays}<span className="text-xl font-medium opacity-70"> day{streakDays === 1 ? "" : "s"}</span></div>
           <div className="text-sm font-medium opacity-90">{streakDays ? "Current streak" : "Apply to one role to start a streak"}</div>
         </div>
-        <div className="lift anim-up rounded-2xl bg-sky-600 p-5 text-white shadow-sm [animation-delay:140ms]">
-          <div className="text-4xl font-extrabold tabular-nums">{appliedThisWeek}</div>
+        <div className="lift anim-up rounded-2xl bg-sky-600 p-5 text-white [animation-delay:140ms]">
+          <div className="text-4xl font-semibold tabular-nums">{appliedThisWeek}</div>
           <div className="text-sm font-medium opacity-90">applications in the last 7 days</div>
         </div>
       </div>
