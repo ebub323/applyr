@@ -25,9 +25,9 @@ export const TAG_TONES = [
 export const tagTone = (s: string) => TAG_TONES[[...s].reduce((n, c) => n + c.charCodeAt(0), 0) % TAG_TONES.length];
 
 export const card =
-  "rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700/60 dark:bg-[#16181d]";
+  "rounded-2xl border border-slate-200 bg-white shadow-none dark:border-[#23252a] dark:bg-[#0f1011]";
 export const input =
-  "w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 dark:border-slate-600 dark:bg-[#101216] dark:focus:ring-blue-500/20";
+  "w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-slate-600 dark:bg-[#08090a] dark:focus:ring-blue-500/20";
 export const btn =
   "press rounded-lg bg-blue-600 px-3.5 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40";
 export const btnGhost =
@@ -41,7 +41,7 @@ export function TagInput({ value, onChange, placeholder }: { value: string[]; on
     setDraft("");
   };
   return (
-    <div className="flex flex-wrap gap-1.5 rounded-xl border border-slate-200 bg-white p-1.5 transition focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-200/60 dark:border-slate-500/30 dark:bg-[#101216]">
+    <div className="flex flex-wrap gap-1.5 rounded-xl border border-slate-200 bg-white p-1.5 transition focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-200/60 dark:border-slate-500/30 dark:bg-[#08090a]">
       {value.map((t) => (
         <span key={t} className={`anim-pop flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${tagTone(t)}`}>
           {t}
@@ -63,7 +63,7 @@ export function TagInput({ value, onChange, placeholder }: { value: string[]; on
 }
 
 /** A short burst of confetti, for the moment something good happens. Remount with a new `burst` to fire again. */
-const CONFETTI = ["#2563eb", "#10b981", "#f59e0b", "#0ea5e9", "#64748b", "#f43f5e"];
+const CONFETTI = ["#5e6ad2", "#27a644", "#828fff", "#d0d6e0", "#8a8f98", "#f7f8f8"];
 export function Confetti({ burst }: { burst: number }) {
   const [live, setLive] = useState(0);
   useEffect(() => {
