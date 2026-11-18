@@ -13,9 +13,44 @@ export const metadata: Metadata = {
     "Upload your resume to see how it grades, then search live postings in any field, from healthcare to software, ranked by how well you match. A small local AI tailors your resume to each job. Runs in your browser.",
 };
 
+// GitHub Pages can't send HTTP headers, so the policy ships as meta tags.
+// Next.js inlines its bootstrap scripts, so script-src needs 'unsafe-inline'.
+// connect-src lists every host the browser talks to:
+//   job boards: Greenhouse, Lever, Ashby, SmartRecruiters, Remotive, Jobicy,
+//   and the SimplifyJobs listings on raw.githubusercontent.com;
+//   the AI tailor: Ollama on localhost, or WebLLM, which downloads its model
+//   from Hugging Face (redirected to *.hf.co) and its WebAssembly library from
+//   raw.githubusercontent.com, so script-src also needs 'wasm-unsafe-eval'.
+const csp = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "object-src 'none'",
+  "img-src 'self' data:",
+  "style-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'",
+  [
+    "connect-src 'self'",
+    "https://boards-api.greenhouse.io",
+    "https://api.lever.co",
+    "https://api.ashbyhq.com",
+    "https://api.smartrecruiters.com",
+    "https://remotive.com",
+    "https://jobicy.com",
+    "https://raw.githubusercontent.com",
+    "https://huggingface.co",
+    "https://*.hf.co",
+    "http://localhost:11434",
+  ].join(" "),
+].join("; ");
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} ${newsreader.variable} ${geistMono.variable} h-full antialiased`}>
+      <head>
+        <meta httpEquiv="Content-Security-Policy" content={csp} />
+        <meta name="referrer" content="strict-origin-when-cross-origin" />
+      </head>
       <body className="min-h-full flex flex-col bg-[#f7f7fb] text-[#1f1d33]">
         <header className="border-b border-[#e1e0ec] bg-[#f7f7fb]">
           <div className="mx-auto flex max-w-6xl items-end justify-between px-6 pb-4 pt-6">
