@@ -11,6 +11,7 @@ import { matchDetail, scoreFit, type FitResult } from "@/lib/score";
 import type { Profile, Role, Weights } from "@/lib/types";
 import MatchDetail from "./MatchDetail";
 import { btn, btnGhost, card, FitPill, input } from "./ui";
+import { safeHttpUrl } from "@/lib/links";
 
 const SOURCE_TONE: Record<string, string> = {
   greenhouse: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200", lever: "bg-sky-100 text-sky-800 dark:bg-sky-500/20 dark:text-sky-200",
@@ -295,7 +296,7 @@ export default function DiscoverTab({ profile, weights, trackedIds, onTrack, run
                         </div>
                       </button>
                       <div className="flex shrink-0 gap-2">
-                        {r.url && <a href={r.url} target="_blank" rel="noreferrer" className={btnGhost}>Apply ↗</a>}
+                        {safeHttpUrl(r.url) && <a href={safeHttpUrl(r.url)!} target="_blank" rel="noreferrer" className={btnGhost}>Apply ↗</a>}
                         <button className={btn} disabled={tracked} onClick={() => onTrack(r)}>{tracked ? "Tracked" : "Track"}</button>
                       </div>
                     </div>

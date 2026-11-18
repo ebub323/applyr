@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { exportBackup, parseBackup } from "@/lib/backup";
 import { buildQueue, daysBetween, followUpsDue, streak } from "@/lib/habit";
+import { openExternal } from "@/lib/links";
 import { profileFromResume } from "@/lib/resume";
 import { scoreFit } from "@/lib/score";
 import { useAppState } from "@/lib/state";
@@ -81,7 +82,7 @@ export default function App() {
   const dueIds = useMemo(() => new Set(due.map((r) => r.id)), [due]);
 
   const applyFromQueue = (r: Scored) => {
-    if (r.url) window.open(r.url, "_blank", "noopener");
+    openExternal(r.url);
     update((s) => s.roles.some((x) => x.id === r.id)
       ? { ...s, roles: s.roles.map((x) => (x.id === r.id ? { ...x, stage: "applied", appliedAt: x.appliedAt ?? day } : x)) }
       : { ...s, roles: [{ ...toRole(r), stage: "applied", appliedAt: day }, ...s.roles] });

@@ -6,6 +6,7 @@ import type { Scored } from "./Board";
 import type { Profile } from "@/lib/types";
 import MatchDetail from "./MatchDetail";
 import { btn, btnGhost, FitPill, input } from "./ui";
+import { safeHttpUrl } from "@/lib/links";
 
 export default function RoleDrawer({ role, profile, resumeText, onChange, onMove, onDelete, onClose }: {
   role: Scored; profile: Profile; resumeText: string; onChange: (patch: Partial<Role>) => void; onMove: (stage: Stage) => void; onDelete: () => void; onClose: () => void;
@@ -39,7 +40,7 @@ export default function RoleDrawer({ role, profile, resumeText, onChange, onMove
           <select value={role.stage} onChange={(e) => onMove(e.target.value as Stage)} className={`${input} !w-auto`}>
             {STAGES.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
           </select>
-          {role.url && <a href={role.url} target="_blank" rel="noreferrer" className={`${btnGhost} ml-auto`}>Open posting ↗</a>}
+          {safeHttpUrl(role.url) && <a href={safeHttpUrl(role.url)!} target="_blank" rel="noreferrer" className={`${btnGhost} ml-auto`}>Open posting ↗</a>}
         </div>
 
         {role.stage === "closed" && (
